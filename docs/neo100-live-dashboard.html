@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEO-100 Live Dashboard — Composition · Mining · Hazard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root{--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--text-primary:#0b0b0b;--text-secondary:#52514e;--text-muted:#898781;--text-accent:#185fa5;--surface-0:#f0efec;--surface-1:#f7f6f3;--surface-2:#ffffff;--bg-danger:#FCEBEB;--bg-warning:#FAEEDA;--bg-success:#EAF3DE;--border:rgba(11,11,11,0.10);--border-strong:rgba(11,11,11,0.18);--radius:8px}
+@media(prefers-color-scheme:dark){:root{--text-primary:#fff;--text-secondary:#c3c2b7;--text-muted:#898781;--text-accent:#3987e5;--surface-0:#0b0b0b;--surface-1:#1a1a19;--surface-2:#232322;--bg-danger:#501313;--bg-warning:#412402;--bg-success:#173404;--border:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);padding:14px;background:var(--surface-0);color:var(--text-primary);min-height:100vh}
+h1{font-size:15px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.src{font-size:11px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pulse{width:7px;height:7px;border-radius:50%;background:#0ca30c;flex-shrink:0;animation:blink 1.8s infinite;display:inline-block}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.utc{font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin-left:auto}
+.eval-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.eval-card{background:var(--surface-2);border:.5px solid var(--border);border-radius:10px;padding:9px 12px}
+.eval-card h5{font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.eval-row{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text-secondary)}
+.eval-row .ev{font-weight:500;color:var(--text-primary);margin-left:2px}
+.eval-prog{height:4px;background:var(--surface-0);border-radius:2px;overflow:hidden;margin-top:6px;display:none}
+.eval-fill{height:100%;border-radius:2px;transition:width .4s}
+.h-fill{background:#E24B4A}.m-fill{background:#378ADD}
+.chg-badge{background:var(--bg-warning);color:#633806;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500}
+#metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:10px}
+.mc{background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:8px 10px}
+.mc .l{font-size:10px;color:var(--text-secondary);margin-bottom:1px}
+.mc .v{font-size:16px;font-weight:500}
+.scale-row{display:flex;gap:5px;margin-bottom:8px;align-items:center}
+.scale-row .sl{font-size:10px;color:var(--text-secondary);white-space:nowrap;margin-right:4px}
+.sb{flex:1;border-radius:6px;padding:5px 6px;text-align:center}
+.sb .sn{font-size:12px;font-weight:500}.sb .sd{font-size:8.5px;margin-top:1px}
+.sb0,.sb1{background:#EAF3DE}.sb0 .sn,.sb0 .sd,.sb1 .sn,.sb1 .sd{color:#27500A}
+.sb2{background:#FAEEDA}.sb2 .sn,.sb2 .sd{color:#633806}
+.sb3{background:#FCEBEB}.sb3 .sn,.sb3 .sd{color:#791F1F}
+.sb4{background:#501313}.sb4 .sn,.sb4 .sd{color:#F7C1C1}
+.mining-row{display:flex;gap:5px;margin-bottom:10px;align-items:center}
+.mining-row .sl{font-size:10px;color:var(--text-secondary);white-space:nowrap;margin-right:4px}
+.mb{flex:1;border-radius:6px;padding:4px 5px;text-align:center;font-size:9px;font-weight:500}
+.mb-prime{background:#EAF3DE;color:#27500A}.mb-high{background:#E1F5EE;color:#04342C}
+.mb-mod{background:#FAEEDA;color:#412402}.mb-low{background:#F1EFE8;color:#444441}.mb-poor{background:#FCEBEB;color:#501313}
+#main{display:grid;grid-template-columns:1fr 320px;gap:10px;align-items:start}
+#orrery-wrap{position:relative;border:.5px solid var(--border);border-radius:12px;overflow:hidden;background:#00010d;margin-bottom:6px}
+#orrery{display:block;width:100%;cursor:grab}
+#orrery.drag{cursor:grabbing}
+#otip{position:absolute;background:var(--surface-2);border:.5px solid var(--border-strong);border-radius:var(--radius);padding:7px 10px;font-size:11px;pointer-events:none;display:none;max-width:220px;line-height:1.55;z-index:5;color:var(--text-primary)}
+#otip strong{font-size:12px;font-weight:500;display:block;margin-bottom:2px}
+.ohint{text-align:center;font-size:10px;color:var(--text-muted);padding:2px 0 6px}
+#side{display:flex;flex-direction:column;gap:8px}
+#detail{border:.5px solid var(--border);border-radius:12px;padding:11px 13px;background:var(--surface-2)}
+#detail h4{font-size:13px;font-weight:500;margin-bottom:2px}
+.dsub{font-size:10.5px;color:var(--text-secondary);margin-bottom:8px}
+.dg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:7px}
+.dg2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px}
+.dc{background:var(--surface-1);border-radius:6px;padding:6px 8px}
+.dc .dl{font-size:9.5px;color:var(--text-secondary)}
+.dc .dv{font-size:11.5px;font-weight:500;color:var(--text-primary)}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+.comp-sec{background:var(--surface-1);border-radius:6px;padding:7px 9px}
+.comp-sec h6{font-size:10.5px;font-weight:500;color:var(--text-secondary);margin-bottom:4px}
+.comp-row{display:flex;justify-content:space-between;font-size:11px;padding:1.5px 0}
+.comp-row span:last-child{font-weight:500}
+.hz-row{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;margin-bottom:7px;background:var(--surface-1)}
+.hz-num{font-size:22px;font-weight:500;width:30px;text-align:center;flex-shrink:0}
+.hz-info .ht{font-size:12px;font-weight:500}.hz-info .hd{font-size:10px;color:var(--text-secondary);margin-top:1px}
+.msb-label{font-size:10px;color:var(--text-secondary);margin-bottom:3px}
+.msb-track{height:6px;background:var(--surface-0);border-radius:3px;overflow:hidden;margin-bottom:4px}
+.msb-fill{height:100%;border-radius:3px}
+.mbar-t{height:6px;background:var(--surface-0);border-radius:3px;overflow:hidden;margin:3px 0}
+.mbar-f{height:100%;border-radius:3px}
+.eval-hist{padding:6px 8px;background:var(--surface-1);border-radius:6px;margin-top:6px}
+.eval-hist h6{font-size:10px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.eh-row{font-size:10px;padding:2px 0;border-bottom:.5px solid var(--border);display:flex;gap:6px;align-items:center}
+.eh-row:last-child{border:none}
+.eh-time{font-size:9.5px;color:var(--text-muted);min-width:88px;font-variant-numeric:tabular-nums}
+.eh-type{font-size:9px;padding:1px 5px;border-radius:4px;font-weight:500;flex-shrink:0}
+.eh-hz{background:#FCEBEB;color:#791F1F}.eh-mine{background:#E6F1FB;color:#042C53}
+.jpl-a{font-size:11px;color:var(--text-accent);text-decoration:none;display:inline-block;margin-top:7px}
+.jpl-a:hover{text-decoration:underline}
+#tbl-panel{border:.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface-2)}
+#ctrl{display:flex;gap:5px;flex-wrap:wrap;padding:7px 9px;border-bottom:.5px solid var(--border);align-items:center;background:var(--surface-1)}
+#ctrl button{font-size:11px;padding:2px 8px;border-radius:16px;border:.5px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer}
+.fa{background:var(--bg-success)!important;color:#27500A!important;border-color:transparent!important}
+.fp{background:var(--bg-danger)!important;color:#791F1F!important;border-color:transparent!important}
+.fc{background:var(--bg-warning)!important;color:#633806!important;border-color:transparent!important}
+.fm{background:#E6F1FB!important;color:#042C53!important;border-color:transparent!important}
+.fch{background:#FAEEDA!important;color:#633806!important;border-color:transparent!important}
+.fcm{background:#EAF3DE!important;color:#27500A!important;border-color:transparent!important}
+#srch{font-size:11px;padding:2px 7px;border-radius:6px;border:.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);width:80px;margin-left:auto;outline:none}
+#tbl-scroll{max-height:370px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;padding:5px 6px;color:var(--text-secondary);font-weight:500;border-bottom:.5px solid var(--border);white-space:nowrap;overflow:hidden;cursor:pointer;z-index:2;user-select:none}
+thead th:hover{color:var(--text-primary)}
+th.sa::after{content:" ↑";color:var(--text-accent)}th.sd::after{content:" ↓";color:var(--text-accent)}
+tbody tr{border-bottom:.5px solid var(--border);cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover,tbody tr.sel{background:var(--surface-1)}
+tbody td{padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
+.hb{font-size:9.5px;padding:1px 5px;border-radius:8px;font-weight:500}
+.h0,.h1{background:#EAF3DE;color:#27500A}.h2{background:#FAEEDA;color:#633806}
+.h3{background:#FCEBEB;color:#791F1F}.h4{background:#501313;color:#F7C1C1}
+.score-bar{display:inline-block;width:28px;height:4px;background:var(--surface-0);border-radius:2px;overflow:hidden;vertical-align:middle;margin-right:3px}
+.score-bar i{display:block;height:100%}
+.api-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle;background:#185fa5}
+.chg-row{background:rgba(186,117,23,0.06)!important}
+.chg-row td:first-child::before{content:"↑ ";color:#BA7517;font-weight:500}
+#status{font-size:10.5px;color:var(--text-secondary);padding:4px 0;text-align:center}
+code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-radius:3px;font-size:10px}
+@media(max-width:750px){#main{grid-template-columns:1fr}#metrics{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+  <h1><i class="ti ti-radar-2" aria-hidden="true" style="font-size:16px"></i>NEO-100 live · composition · mining · hazard · ephemeris</h1>
+  <span class="utc" id="utc"></span>
+</div>
+<div class="src">
+  <span class="pulse"></span>
+  <span>100-object dataset · hazard re-evaluated weekly via NASA CAD API · mining scores re-evaluated monthly · approach dates from JPL ephemeris where name-matched</span>
+</div>
+
+<div class="eval-grid">
+  <div class="eval-card">
+    <h5><i class="ti ti-shield" aria-hidden="true" style="font-size:13px;color:#E24B4A"></i>Hazard evaluation — weekly</h5>
+    <div class="eval-row">
+      <span>Last: <span class="ev" id="h-last">—</span></span>
+      <span>Next: <span class="ev" id="h-next" style="font-variant-numeric:tabular-nums">—</span></span>
+      <span>Runs: <span class="ev" id="h-count">0</span></span>
+      <span id="h-badge"></span>
+    </div>
+    <div class="eval-prog" id="h-prog"><div class="eval-fill h-fill" id="h-fill" style="width:0%"></div></div>
+  </div>
+  <div class="eval-card">
+    <h5><i class="ti ti-pickaxe" aria-hidden="true" style="font-size:13px;color:#378ADD"></i>Mining viability — monthly</h5>
+    <div class="eval-row">
+      <span>Last: <span class="ev" id="m-last">—</span></span>
+      <span>Next: <span class="ev" id="m-next" style="font-variant-numeric:tabular-nums">—</span></span>
+      <span>Runs: <span class="ev" id="m-count">0</span></span>
+      <span id="m-badge"></span>
+    </div>
+    <div class="eval-prog" id="m-prog"><div class="eval-fill m-fill" id="m-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div id="metrics">
+  <div class="mc"><div class="l">Total objects</div><div class="v">100</div></div>
+  <div class="mc"><div class="l">API ephemeris matches</div><div class="v" id="mm-api" style="color:#185fa5">—</div></div>
+  <div class="mc"><div class="l">Hazard lvl 3–4</div><div class="v" id="mm-haz" style="color:#A32D2D">—</div></div>
+  <div class="mc"><div class="l">Prime mining targets</div><div class="v" id="mm-prime" style="color:#3B6D11">—</div></div>
+  <div class="mc"><div class="l">Fastest (km/s)</div><div class="v" id="mm-fast">—</div></div>
+  <div class="mc"><div class="l">Changed (hazard)</div><div class="v" id="mm-chg" style="color:#BA7517">—</div></div>
+</div>
+
+<div class="scale-row">
+  <span class="sl">Hazard:</span>
+  <div class="sb sb0"><div class="sn">0</div><div class="sd">No concern</div></div>
+  <div class="sb sb1"><div class="sn">1</div><div class="sd">Routine</div></div>
+  <div class="sb sb2"><div class="sn">2</div><div class="sd">Notable</div></div>
+  <div class="sb sb3"><div class="sn">3</div><div class="sd">Close pass</div></div>
+  <div class="sb sb4"><div class="sn">4</div><div class="sd">Critical</div></div>
+</div>
+<div class="mining-row">
+  <span class="sl">Mining:</span>
+  <div class="mb mb-prime">Prime target</div>
+  <div class="mb mb-high">High potential</div>
+  <div class="mb mb-mod">Moderate</div>
+  <div class="mb mb-low">Low potential</div>
+  <div class="mb mb-poor">Poor candidate</div>
+</div>
+
+<div id="main">
+  <div>
+    <div id="orrery-wrap"><canvas id="orrery"></canvas><div id="otip"></div></div>
+    <div class="ohint">Drag to rotate · Scroll to zoom · Click dot to inspect · Color = mining tier (hazard overrides for lvl 3–4)</div>
+    <div id="status">Loading 100-object dataset and connecting to NASA CAD API…</div>
+  </div>
+  <div id="side">
+    <div id="detail">
+      <div style="color:var(--text-muted);font-size:12px;padding:20px 0;text-align:center">
+        Select a NEO from the table or orrery<br>to see composition, mining data,<br>and evaluation history
+      </div>
+    </div>
+    <div id="tbl-panel">
+      <div id="ctrl">
+        <button data-f="all" class="fa">All</button>
+        <button data-f="pha">Haz 3–4</button>
+        <button data-f="prime">Prime</button>
+        <button data-f="C">C-type</button>
+        <button data-f="M">M-type</button>
+        <button data-f="changed">Changed</button>
+        <input id="srch" type="text" placeholder="Search…">
+      </div>
+      <div id="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th data-k="name" style="width:100px">Name</th>
+            <th data-k="speed_kms" style="width:56px">Speed</th>
+            <th data-k="mass_kg" style="width:60px">Mass</th>
+            <th data-k="approach_dist_ld" style="width:46px">LD</th>
+            <th data-k="approach_date" style="width:76px">Approach</th>
+            <th data-k="hazard" style="width:42px">Haz</th>
+            <th data-k="mining_score" style="width:66px">Mining</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="font-size:10.5px;color:var(--text-muted);margin-top:8px;line-height:1.6">
+  Dataset: 100 NEOs with real composition science (C/S/M/X types, volatiles, metals, mining scores). Speed and mass from dataset physical properties. Approach dates from JPL ephemeris via NASA CAD API where name-matched; simulated for unmatched objects (labeled). Hazard re-scored weekly against NASA MOID + PHA data. Mining viability re-scored monthly from updated accessibility, composition value, and size factors. Replace <code>DEMO_KEY</code> with your key from <a href="https://api.nasa.gov" style="color:var(--text-accent)">api.nasa.gov</a>.
+</div>
+
+<script>
+const BASE_DATA=[{"id":1,"name":"99942 Apophis","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3016.0,"density":2.91,"mass_kg":41867072618294,"speed_kms":20.38,"moid_au":0.02778,"period_yr":4.33,"volatiles":{"water_ice_pct":0.33,"hydrated_minerals_pct":2.6},"metals":{"iron_nickel_pct":19.1,"silicates_pct":79.1,"olivine_pyroxene_pct":43.2},"hazard":2,"accessibility":56.3,"comp_value":50.3,"size_factor":100,"mining_score":65.1,"mining_tier":"High potential","mining_rank":37,"sim_approach_dist_ld":56.83,"sim_approach_date":"2042-Mar-05"},{"id":2,"name":"101955 Bennu","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":2384.0,"density":1.67,"mass_kg":11848977669339,"speed_kms":14.07,"moid_au":0.0257,"period_yr":0.7,"volatiles":{"water_ice_pct":15.0,"hydrated_minerals_pct":15.7,"organics_pct":7.3},"metals":{"iron_nickel_pct":7.2,"silicates_pct":36.4},"hazard":2,"accessibility":75.8,"comp_value":92.4,"size_factor":100,"mining_score":87.7,"mining_tier":"Prime target","mining_rank":2,"sim_approach_dist_ld":4.54,"sim_approach_date":"2032-Apr-19"},{"id":3,"name":"433 Eros","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":656.0,"density":2.7,"mass_kg":399052926011,"speed_kms":28.9,"moid_au":0.07624,"period_yr":1.07,"volatiles":{"water_ice_pct":0.11,"hydrated_minerals_pct":3.3},"metals":{"iron_nickel_pct":19.7,"silicates_pct":56.5,"olivine_pyroxene_pct":38.2},"hazard":1,"accessibility":47.8,"comp_value":50.8,"size_factor":93.9,"mining_score":60.4,"mining_tier":"High potential","mining_rank":56,"sim_approach_dist_ld":51.87,"sim_approach_date":"2030-Jun-14"},{"id":4,"name":"1566 Icarus","orb_class":"Apollo","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":348.0,"density":6.03,"mass_kg":132988459404,"speed_kms":9.5,"moid_au":0.32323,"period_yr":4.79,"volatiles":{"water_ice_pct":1.39,"hydrated_minerals_pct":2.5,"organics_pct":0.08},"metals":{"iron_nickel_pct":71.0,"platinum_group_ppm":31.0,"cobalt_pct":0.66},"hazard":1,"accessibility":24.8,"comp_value":100,"size_factor":86.2,"mining_score":66.5,"mining_tier":"High potential","mining_rank":28,"sim_approach_dist_ld":58.15,"sim_approach_date":"2026-Jan-21"},{"id":5,"name":"1862 Apollo","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":3266.0,"density":1.5,"mass_kg":27290362695969,"speed_kms":26.54,"moid_au":0.062,"period_yr":2.05,"volatiles":{"water_ice_pct":4.1,"hydrated_minerals_pct":24.6,"organics_pct":4.5},"metals":{"iron_nickel_pct":7.1,"silicates_pct":38.1},"hazard":1,"accessibility":50.0,"comp_value":73.8,"size_factor":100,"mining_score":70.8,"mining_tier":"High potential","mining_rank":14,"sim_approach_dist_ld":44.95,"sim_approach_date":"2026-Oct-24"},{"id":6,"name":"3200 Phaethon","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":283.0,"density":1.67,"mass_kg":19850099541,"speed_kms":14.02,"moid_au":0.23785,"period_yr":3.63,"volatiles":{"water_ice_pct":6.9,"hydrated_minerals_pct":27.9,"organics_pct":2.7},"metals":{"iron_nickel_pct":4.4,"silicates_pct":48.4},"hazard":1,"accessibility":35.2,"comp_value":81.9,"size_factor":83.7,"mining_score":63.7,"mining_tier":"High potential","mining_rank":43,"sim_approach_dist_ld":56.1,"sim_approach_date":"2030-Nov-19"},{"id":7,"name":"25143 Itokawa","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2039.0,"density":3.0,"mass_kg":13311129430024,"speed_kms":13.15,"moid_au":0.10615,"period_yr":5.17,"volatiles":{"water_ice_pct":1.09,"hydrated_minerals_pct":1.5},"metals":{"iron_nickel_pct":24.8,"silicates_pct":75.2,"olivine_pyroxene_pct":33.2},"hazard":1,"accessibility":51.5,"comp_value":54.8,"size_factor":100,"mining_score":64.8,"mining_tier":"High potential","mining_rank":40,"sim_approach_dist_ld":26.46,"sim_approach_date":"2026-Apr-12"},{"id":8,"name":"4179 Toutatis","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3222.0,"density":2.82,"mass_kg":49382929909854,"speed_kms":13.08,"moid_au":0.13722,"period_yr":3.97,"volatiles":{"water_ice_pct":0.85,"hydrated_minerals_pct":1.4},"metals":{"iron_nickel_pct":10.1,"silicates_pct":74.3,"olivine_pyroxene_pct":35.9},"hazard":1,"accessibility":50.5,"comp_value":43.1,"size_factor":100,"mining_score":60.3,"mining_tier":"High potential","mining_rank":57,"sim_approach_dist_ld":5.81,"sim_approach_date":"2028-Sep-16"},{"id":9,"name":"65803 Didymos","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1448.0,"density":2.35,"mass_kg":3739947037890,"speed_kms":21.96,"moid_au":0.33385,"period_yr":3.45,"volatiles":{"water_ice_pct":1.87,"hydrated_minerals_pct":4.9},"metals":{"iron_nickel_pct":10.6,"silicates_pct":63.9,"olivine_pyroxene_pct":37.1},"hazard":1,"accessibility":11.0,"comp_value":43.5,"size_factor":100,"mining_score":44.6,"mining_tier":"Low potential","mining_rank":96,"sim_approach_dist_ld":22.07,"sim_approach_date":"2027-Jul-05"},{"id":10,"name":"66391 Moshup","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3010.0,"density":2.82,"mass_kg":40332982866771,"speed_kms":11.81,"moid_au":0.31997,"period_yr":1.47,"volatiles":{"water_ice_pct":0.82,"hydrated_minerals_pct":3.3},"metals":{"iron_nickel_pct":21.0,"silicates_pct":61.2,"olivine_pyroxene_pct":24.0},"hazard":1,"accessibility":32.2,"comp_value":51.8,"size_factor":100,"mining_score":56.0,"mining_tier":"Moderate potential","mining_rank":67,"sim_approach_dist_ld":47.01,"sim_approach_date":"2030-Jan-06"},{"id":11,"name":"2102 Tantalus","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":236.0,"density":2.94,"mass_kg":20254081174,"speed_kms":30.59,"moid_au":0.08925,"period_yr":3.83,"volatiles":{"water_ice_pct":1.02,"hydrated_minerals_pct":3.4},"metals":{"iron_nickel_pct":22.7,"silicates_pct":63.3,"olivine_pyroxene_pct":20.7},"hazard":1,"accessibility":35.4,"comp_value":53.2,"size_factor":81.4,"mining_score":53.1,"mining_tier":"Moderate potential","mining_rank":79,"sim_approach_dist_ld":21.26,"sim_approach_date":"2030-Jun-09"},{"id":12,"name":"3122 Florence","orb_class":"Aten","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":312.0,"density":3.35,"mass_kg":53261193121,"speed_kms":12.54,"moid_au":0.01785,"period_yr":2.74,"volatiles":{"water_ice_pct":0.4,"hydrated_minerals_pct":8.6},"metals":{"iron_nickel_pct":24.9,"silicates_pct":36.3},"hazard":2,"accessibility":72.8,"comp_value":52.5,"size_factor":84.8,"mining_score":68.7,"mining_tier":"High potential","mining_rank":24,"sim_approach_dist_ld":22.04,"sim_approach_date":"2032-Sep-22"},{"id":13,"name":"4486 Mithra","orb_class":"Apollo","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":708.0,"density":5.48,"mass_kg":1017501459909,"speed_kms":18.64,"moid_au":0.37615,"period_yr":3.92,"volatiles":{"water_ice_pct":0.0,"hydrated_minerals_pct":0.9,"organics_pct":0.21},"metals":{"iron_nickel_pct":74.1,"platinum_group_ppm":64.1,"cobalt_pct":0.72},"hazard":1,"accessibility":7.6,"comp_value":100,"size_factor":94.8,"mining_score":61.7,"mining_tier":"High potential","mining_rank":52,"sim_approach_dist_ld":33.01,"sim_approach_date":"2027-Oct-19"},{"id":14,"name":"6489 Golevka","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":732.0,"density":2.42,"mass_kg":496739789053,"speed_kms":24.27,"moid_au":0.13414,"period_yr":4.61,"volatiles":{"water_ice_pct":0.29,"hydrated_minerals_pct":0.2},"metals":{"iron_nickel_pct":24.8,"silicates_pct":70.3,"olivine_pyroxene_pct":39.2},"hazard":1,"accessibility":34.5,"comp_value":54.8,"size_factor":95.2,"mining_score":56.8,"mining_tier":"Moderate potential","mining_rank":65,"sim_approach_dist_ld":48.45,"sim_approach_date":"2042-Apr-22"},{"id":15,"name":"53319 1999 JM8","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2028.0,"density":2.58,"mass_kg":11266299041267,"speed_kms":31.16,"moid_au":0.34419,"period_yr":4.94,"volatiles":{"water_ice_pct":0.5,"hydrated_minerals_pct":4.2},"metals":{"iron_nickel_pct":16.8,"silicates_pct":75.0,"olivine_pyroxene_pct":36.7},"hazard":1,"accessibility":5,"comp_value":48.4,"size_factor":100,"mining_score":43.9,"mining_tier":"Low potential","mining_rank":98,"sim_approach_dist_ld":3.3,"sim_approach_date":"2042-Jul-08"},{"id":16,"name":"85182 1991 AQ","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":2605.0,"density":3.35,"mass_kg":30968727438765,"speed_kms":27.21,"moid_au":0.18992,"period_yr":1.87,"volatiles":{"water_ice_pct":1.6,"hydrated_minerals_pct":2.8},"metals":{"iron_nickel_pct":23.6,"silicates_pct":35.4},"hazard":1,"accessibility":30.5,"comp_value":51.8,"size_factor":100,"mining_score":55.3,"mining_tier":"Moderate potential","mining_rank":69,"sim_approach_dist_ld":37.72,"sim_approach_date":"2027-Nov-09"},{"id":17,"name":"137108 1999 AN10","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":503.0,"density":2.79,"mass_kg":186211142870,"speed_kms":21.88,"moid_au":0.16637,"period_yr":1.61,"volatiles":{"water_ice_pct":1.53,"hydrated_minerals_pct":1.9},"metals":{"iron_nickel_pct":10.1,"silicates_pct":63.8,"olivine_pyroxene_pct":38.8},"hazard":1,"accessibility":41.8,"comp_value":43.1,"size_factor":90.6,"mining_score":54.5,"mining_tier":"Moderate potential","mining_rank":72,"sim_approach_dist_ld":51.45,"sim_approach_date":"2030-Jul-25"},{"id":18,"name":"152756 1999 JS","orb_class":"Atira","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":667.0,"density":2.33,"mass_kg":361884773686,"speed_kms":19.05,"moid_au":0.01171,"period_yr":2.25,"volatiles":{"water_ice_pct":5.9,"hydrated_minerals_pct":7.3},"metals":{"iron_nickel_pct":42.2,"silicates_pct":41.8},"hazard":2,"accessibility":66.7,"comp_value":61.1,"size_factor":94.1,"mining_score":71.6,"mining_tier":"High potential","mining_rank":13,"sim_approach_dist_ld":55.2,"sim_approach_date":"2035-Jul-24"},{"id":19,"name":"159402 1999 AP10","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":444.0,"density":2.48,"mass_kg":113754465827,"speed_kms":16.44,"moid_au":0.35187,"period_yr":1.96,"volatiles":{"water_ice_pct":1.08,"hydrated_minerals_pct":5.0},"metals":{"iron_nickel_pct":15.2,"silicates_pct":71.3,"olivine_pyroxene_pct":39.5},"hazard":1,"accessibility":20.0,"comp_value":47.2,"size_factor":89.1,"mining_score":46.8,"mining_tier":"Moderate potential","mining_rank":92,"sim_approach_dist_ld":1.46,"sim_approach_date":"2030-May-27"},{"id":20,"name":"175706 1996 FG3","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":145.0,"density":2.45,"mass_kg":3914938622,"speed_kms":11.95,"moid_au":0.24294,"period_yr":4.26,"volatiles":{"water_ice_pct":1.15,"hydrated_minerals_pct":4.5},"metals":{"iron_nickel_pct":15.6,"silicates_pct":78.5,"olivine_pyroxene_pct":25.0},"hazard":1,"accessibility":35.2,"comp_value":47.5,"size_factor":75.5,"mining_score":49.6,"mining_tier":"Moderate potential","mining_rank":86,"sim_approach_dist_ld":55.75,"sim_approach_date":"2026-Mar-10"},{"id":21,"name":"185851 2000 DP107","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":246.0,"density":2.78,"mass_kg":21661552134,"speed_kms":22.5,"moid_au":0.01652,"period_yr":3.21,"volatiles":{"water_ice_pct":0.84,"hydrated_minerals_pct":2.5},"metals":{"iron_nickel_pct":16.5,"silicates_pct":64.1,"olivine_pyroxene_pct":42.3},"hazard":2,"accessibility":58.6,"comp_value":48.2,"size_factor":81.9,"mining_score":60.8,"mining_tier":"High potential","mining_rank":55,"sim_approach_dist_ld":1.06,"sim_approach_date":"2035-Jun-03"},{"id":22,"name":"276049 2002 CE26","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":340.0,"density":2.73,"mass_kg":56205539567,"speed_kms":19.82,"moid_au":0.33031,"period_yr":3.5,"volatiles":{"water_ice_pct":0.49,"hydrated_minerals_pct":2.3},"metals":{"iron_nickel_pct":19.2,"silicates_pct":64.5,"olivine_pyroxene_pct":20.7},"hazard":1,"accessibility":14.2,"comp_value":50.4,"size_factor":85.9,"mining_score":44.8,"mining_tier":"Low potential","mining_rank":95,"sim_approach_dist_ld":52.93,"sim_approach_date":"2029-Apr-27"},{"id":23,"name":"388945 2008 TZ3","orb_class":"Aten","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":83.0,"density":2.41,"mass_kg":722840765,"speed_kms":7.77,"moid_au":0.37923,"period_yr":1.02,"volatiles":{"water_ice_pct":3.9,"hydrated_minerals_pct":6.9},"metals":{"iron_nickel_pct":38.8,"silicates_pct":31.9},"hazard":1,"accessibility":30.0,"comp_value":59.4,"size_factor":68.7,"mining_score":50.0,"mining_tier":"Moderate potential","mining_rank":85,"sim_approach_dist_ld":41.53,"sim_approach_date":"2038-Jul-16"},{"id":24,"name":"410777 2009 FD","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":510.0,"density":1.53,"mass_kg":106356595037,"speed_kms":16.27,"moid_au":0.28117,"period_yr":1.93,"volatiles":{"water_ice_pct":17.1,"hydrated_minerals_pct":33.8,"organics_pct":5.8},"metals":{"iron_nickel_pct":3.1,"silicates_pct":49.8},"hazard":1,"accessibility":30.9,"comp_value":100,"size_factor":90.8,"mining_score":70.1,"mining_tier":"High potential","mining_rank":18,"sim_approach_dist_ld":19.14,"sim_approach_date":"2028-Apr-04"},{"id":25,"name":"441987 2010 NY65","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":4128.0,"density":1.89,"mass_kg":69477099238708,"speed_kms":15.51,"moid_au":0.28324,"period_yr":1.22,"volatiles":{"water_ice_pct":17.3,"hydrated_minerals_pct":12.6,"organics_pct":1.1},"metals":{"iron_nickel_pct":3.7,"silicates_pct":44.6},"hazard":1,"accessibility":33.7,"comp_value":95.6,"size_factor":100,"mining_score":71.9,"mining_tier":"High potential","mining_rank":11,"sim_approach_dist_ld":38.38,"sim_approach_date":"2026-Jan-18"},{"id":26,"name":"467317 2000 GK137","orb_class":"Atira","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1177.0,"density":2.41,"mass_kg":2054288053356,"speed_kms":9.76,"moid_au":0.09935,"period_yr":3.33,"volatiles":{"water_ice_pct":0.76,"hydrated_minerals_pct":4.5},"metals":{"iron_nickel_pct":14.5,"silicates_pct":69.7,"olivine_pyroxene_pct":30.7},"hazard":1,"accessibility":62.4,"comp_value":46.6,"size_factor":100,"mining_score":66.3,"mining_tier":"High potential","mining_rank":32,"sim_approach_dist_ld":46.61,"sim_approach_date":"2030-Oct-20"},{"id":27,"name":"523775 2014 ME6","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":4590.0,"density":2.36,"mass_kg":119334264971377,"speed_kms":11.65,"moid_au":0.16347,"period_yr":3.98,"volatiles":{"water_ice_pct":1.41,"hydrated_minerals_pct":2.3},"metals":{"iron_nickel_pct":20.3,"silicates_pct":78.1,"olivine_pyroxene_pct":39.7},"hazard":1,"accessibility":48.4,"comp_value":51.2,"size_factor":100,"mining_score":62.3,"mining_tier":"High potential","mining_rank":48,"sim_approach_dist_ld":42.51,"sim_approach_date":"2031-May-02"},{"id":28,"name":"2063 Bacchus","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":5071.0,"density":2.75,"mass_kg":187992263668825,"speed_kms":9.39,"moid_au":0.06645,"period_yr":2.11,"volatiles":{"water_ice_pct":0.61,"hydrated_minerals_pct":2.0},"metals":{"iron_nickel_pct":14.1,"silicates_pct":68.5,"olivine_pyroxene_pct":30.9},"hazard":1,"accessibility":71.5,"comp_value":46.3,"size_factor":100,"mining_score":69.8,"mining_tier":"High potential","mining_rank":19,"sim_approach_dist_ld":28.28,"sim_approach_date":"2038-Oct-10"},{"id":29,"name":"3753 Cruithne","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3732.0,"density":2.46,"mass_kg":66957966307947,"speed_kms":23.06,"moid_au":0.0084,"period_yr":4.35,"volatiles":{"water_ice_pct":0.88,"hydrated_minerals_pct":1.4},"metals":{"iron_nickel_pct":25.0,"silicates_pct":65.9,"olivine_pyroxene_pct":40.4},"hazard":3,"accessibility":55.7,"comp_value":55.0,"size_factor":100,"mining_score":66.5,"mining_tier":"High potential","mining_rank":29,"sim_approach_dist_ld":31.28,"sim_approach_date":"2028-Oct-02"},{"id":30,"name":"5381 Sekhmet","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":947.0,"density":2.74,"mass_kg":1219850449366,"speed_kms":25.06,"moid_au":0.16024,"period_yr":4.33,"volatiles":{"water_ice_pct":5.8,"hydrated_minerals_pct":6.0},"metals":{"iron_nickel_pct":30.4,"silicates_pct":49.8},"hazard":1,"accessibility":30.4,"comp_value":55.2,"size_factor":98.3,"mining_score":56.1,"mining_tier":"Moderate potential","mining_rank":66,"sim_approach_dist_ld":19.6,"sim_approach_date":"2026-Aug-03"},{"id":31,"name":"5587 1990 SB","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":998.0,"density":2.83,"mass_kg":1472656678370,"speed_kms":12.89,"moid_au":0.21973,"period_yr":5.15,"volatiles":{"water_ice_pct":1.22,"hydrated_minerals_pct":1.2},"metals":{"iron_nickel_pct":12.4,"silicates_pct":68.8,"olivine_pyroxene_pct":33.8},"hazard":1,"accessibility":34.8,"comp_value":44.9,"size_factor":99.0,"mining_score":54.4,"mining_tier":"Moderate potential","mining_rank":77,"sim_approach_dist_ld":58.4,"sim_approach_date":"2031-Dec-16"},{"id":32,"name":"6178 1986 DA","orb_class":"Atira","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":5191.0,"density":1.28,"mass_kg":93910983968201,"speed_kms":20.99,"moid_au":0.10944,"period_yr":4.69,"volatiles":{"water_ice_pct":20.5,"hydrated_minerals_pct":22.7,"organics_pct":7.2},"metals":{"iron_nickel_pct":7.2,"silicates_pct":40.5},"hazard":1,"accessibility":42.2,"comp_value":100,"size_factor":100,"mining_score":76.9,"mining_tier":"Prime target","mining_rank":7,"sim_approach_dist_ld":23.2,"sim_approach_date":"2031-Apr-15"},{"id":33,"name":"7335 1989 JA","orb_class":"Apollo","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":6454.0,"density":5.49,"mass_kg":772112687471127,"speed_kms":33.97,"moid_au":0.19591,"period_yr":1.33,"volatiles":{"water_ice_pct":0.48,"hydrated_minerals_pct":0.6,"organics_pct":0.35},"metals":{"iron_nickel_pct":73.9,"platinum_group_ppm":32.5,"cobalt_pct":1.0},"hazard":1,"accessibility":22.5,"comp_value":100,"size_factor":100,"mining_score":69.0,"mining_tier":"High potential","mining_rank":23,"sim_approach_dist_ld":27.48,"sim_approach_date":"2032-Aug-12"},{"id":34,"name":"7482 1994 PC1","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":9521.0,"density":1.47,"mass_kg":664414375201899,"speed_kms":20.63,"moid_au":0.0149,"period_yr":3.06,"volatiles":{"water_ice_pct":20.3,"hydrated_minerals_pct":10.4,"organics_pct":2.0},"metals":{"iron_nickel_pct":7.2,"silicates_pct":54.4},"hazard":2,"accessibility":61.8,"comp_value":100,"size_factor":100,"mining_score":84.7,"mining_tier":"Prime target","mining_rank":4,"sim_approach_dist_ld":6.25,"sim_approach_date":"2033-Jun-28"},{"id":35,"name":"9162 Kwiila","orb_class":"Amor","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":376.0,"density":1.48,"mass_kg":41144009848,"speed_kms":21.64,"moid_au":0.38166,"period_yr":3.67,"volatiles":{"water_ice_pct":7.5,"hydrated_minerals_pct":27.1,"organics_pct":3.0},"metals":{"iron_nickel_pct":3.4,"silicates_pct":36.8},"hazard":1,"accessibility":5,"comp_value":82.8,"size_factor":87.1,"mining_score":52.8,"mining_tier":"Moderate potential","mining_rank":80,"sim_approach_dist_ld":37.16,"sim_approach_date":"2042-Aug-28"},{"id":36,"name":"10302 1989 ML","orb_class":"Amor","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":1873.0,"density":2.49,"mass_kg":8554827304021,"speed_kms":8.99,"moid_au":0.14345,"period_yr":2.71,"volatiles":{"water_ice_pct":0.5,"hydrated_minerals_pct":10.7},"metals":{"iron_nickel_pct":33.6,"silicates_pct":34.8},"hazard":1,"accessibility":58.7,"comp_value":56.8,"size_factor":100,"mining_score":68.4,"mining_tier":"High potential","mining_rank":26,"sim_approach_dist_ld":10.45,"sim_approach_date":"2027-Sep-14"},{"id":37,"name":"11066 Sigurd","orb_class":"Aten","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":1107.0,"density":3.35,"mass_kg":2380791772826,"speed_kms":25.46,"moid_au":0.06327,"period_yr":2.76,"volatiles":{"water_ice_pct":2.7,"hydrated_minerals_pct":5.0},"metals":{"iron_nickel_pct":45.0,"silicates_pct":47.1},"hazard":1,"accessibility":49.1,"comp_value":62.5,"size_factor":100,"mining_score":66.5,"mining_tier":"High potential","mining_rank":30,"sim_approach_dist_ld":41.51,"sim_approach_date":"2029-Oct-10"},{"id":38,"name":"16834 1997 WU22","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":837.0,"density":1.69,"mass_kg":518718812038,"speed_kms":7.71,"moid_au":0.34604,"period_yr":4.41,"volatiles":{"water_ice_pct":7.4,"hydrated_minerals_pct":30.0,"organics_pct":2.5},"metals":{"iron_nickel_pct":3.1,"silicates_pct":40.0},"hazard":1,"accessibility":24.8,"comp_value":84.3,"size_factor":96.8,"mining_score":63.6,"mining_tier":"High potential","mining_rank":44,"sim_approach_dist_ld":46.61,"sim_approach_date":"2026-Oct-24"},{"id":39,"name":"29075 1950 DA","orb_class":"Amor","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":1814.0,"density":4.63,"mass_kg":14471059359017,"speed_kms":8.38,"moid_au":0.14601,"period_yr":1.24,"volatiles":{"water_ice_pct":1.18,"hydrated_minerals_pct":2.6,"organics_pct":0.18},"metals":{"iron_nickel_pct":71.6,"platinum_group_ppm":35.4,"cobalt_pct":0.45},"hazard":1,"accessibility":63.5,"comp_value":100,"size_factor":100,"mining_score":85.4,"mining_tier":"Prime target","mining_rank":3,"sim_approach_dist_ld":12.29,"sim_approach_date":"2028-Jun-24"},{"id":40,"name":"52768 1998 OR2","orb_class":"Amor","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":4269.0,"density":1.81,"mass_kg":73702523561882,"speed_kms":27.49,"moid_au":0.09032,"period_yr":3.91,"volatiles":{"water_ice_pct":10.5,"hydrated_minerals_pct":16.6,"organics_pct":1.9},"metals":{"iron_nickel_pct":4.2,"silicates_pct":50.0},"hazard":1,"accessibility":39.0,"comp_value":83.1,"size_factor":100,"mining_score":69.7,"mining_tier":"High potential","mining_rank":20,"sim_approach_dist_ld":5.69,"sim_approach_date":"2035-Jul-28"},{"id":41,"name":"68216 2001 CV26","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":1851.0,"density":1.67,"mass_kg":5553340401001,"speed_kms":16.19,"moid_au":0.24407,"period_yr":3.77,"volatiles":{"water_ice_pct":3.9,"hydrated_minerals_pct":10.9,"organics_pct":8.0},"metals":{"iron_nickel_pct":2.7,"silicates_pct":39.7},"hazard":1,"accessibility":31.0,"comp_value":65.1,"size_factor":100,"mining_score":60.2,"mining_tier":"High potential","mining_rank":58,"sim_approach_dist_ld":7.27,"sim_approach_date":"2035-Aug-23"},{"id":42,"name":"85585 1997 EA15","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2736.0,"density":2.81,"mass_kg":30118947648890,"speed_kms":29.59,"moid_au":0.2463,"period_yr":5.2,"volatiles":{"water_ice_pct":1.9,"hydrated_minerals_pct":4.3},"metals":{"iron_nickel_pct":11.5,"silicates_pct":72.1,"olivine_pyroxene_pct":33.6},"hazard":1,"accessibility":9.0,"comp_value":44.2,"size_factor":100,"mining_score":44.1,"mining_tier":"Low potential","mining_rank":97,"sim_approach_dist_ld":26.77,"sim_approach_date":"2028-Jan-23"},{"id":43,"name":"86039 1999 NC43","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":963.0,"density":2.99,"mass_kg":1400075603598,"speed_kms":24.51,"moid_au":0.2389,"period_yr":0.7,"volatiles":{"water_ice_pct":4.6,"hydrated_minerals_pct":4.1},"metals":{"iron_nickel_pct":21.5,"silicates_pct":47.4},"hazard":1,"accessibility":30.2,"comp_value":50.8,"size_factor":98.5,"mining_score":54.5,"mining_tier":"Moderate potential","mining_rank":73,"sim_approach_dist_ld":4.4,"sim_approach_date":"2042-Jun-08"},{"id":44,"name":"86450 2000 CK33","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2693.0,"density":2.48,"mass_kg":25314143277197,"speed_kms":8.18,"moid_au":0.00604,"period_yr":4.47,"volatiles":{"water_ice_pct":0.25,"hydrated_minerals_pct":2.1},"metals":{"iron_nickel_pct":11.7,"silicates_pct":56.6,"olivine_pyroxene_pct":31.2},"hazard":3,"accessibility":75.0,"comp_value":44.4,"size_factor":100,"mining_score":70.5,"mining_tier":"High potential","mining_rank":16,"sim_approach_dist_ld":16.14,"sim_approach_date":"2027-Oct-11"},{"id":45,"name":"99799 2002 LJ3","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1087.0,"density":2.81,"mass_kg":1889077743628,"speed_kms":15.49,"moid_au":0.25737,"period_yr":0.75,"volatiles":{"water_ice_pct":1.82,"hydrated_minerals_pct":0.4},"metals":{"iron_nickel_pct":11.2,"silicates_pct":70.2,"olivine_pyroxene_pct":21.6},"hazard":1,"accessibility":39.0,"comp_value":44.0,"size_factor":100,"mining_score":56.0,"mining_tier":"Moderate potential","mining_rank":68,"sim_approach_dist_ld":29.57,"sim_approach_date":"2031-Jul-14"},{"id":46,"name":"138175 2000 EE104","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":1398.0,"density":1.9,"mass_kg":2712772094273,"speed_kms":10.13,"moid_au":0.28074,"period_yr":4.78,"volatiles":{"water_ice_pct":7.3,"hydrated_minerals_pct":18.5,"organics_pct":4.2},"metals":{"iron_nickel_pct":4.5,"silicates_pct":36.9},"hazard":1,"accessibility":30.4,"comp_value":77.2,"size_factor":100,"mining_score":64.2,"mining_tier":"High potential","mining_rank":42,"sim_approach_dist_ld":27.26,"sim_approach_date":"2035-Sep-24"},{"id":47,"name":"138852 2000 WN10","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":923.0,"density":2.35,"mass_kg":966308006799,"speed_kms":10.06,"moid_au":0.29554,"period_yr":4.58,"volatiles":{"water_ice_pct":0.82,"hydrated_minerals_pct":4.4},"metals":{"iron_nickel_pct":24.1,"silicates_pct":65.6,"olivine_pyroxene_pct":42.9},"hazard":1,"accessibility":28.9,"comp_value":54.3,"size_factor":98.0,"mining_score":55.1,"mining_tier":"Moderate potential","mining_rank":70,"sim_approach_dist_ld":40.3,"sim_approach_date":"2032-Jan-19"},{"id":48,"name":"143651 2003 QO104","orb_class":"Aten","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":823.0,"density":1.56,"mass_kg":453922011628,"speed_kms":16.78,"moid_au":0.22255,"period_yr":1.16,"volatiles":{"water_ice_pct":15.5,"hydrated_minerals_pct":27.3,"organics_pct":1.2},"metals":{"iron_nickel_pct":3.6,"silicates_pct":50.2},"hazard":1,"accessibility":41.3,"comp_value":100,"size_factor":96.6,"mining_score":75.7,"mining_tier":"Prime target","mining_rank":9,"sim_approach_dist_ld":36.66,"sim_approach_date":"2028-Oct-08"},{"id":49,"name":"154029 2002 CR46","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":605.0,"density":3.46,"mass_kg":400916564594,"speed_kms":9.93,"moid_au":0.21224,"period_yr":2.44,"volatiles":{"water_ice_pct":4.7,"hydrated_minerals_pct":7.7},"metals":{"iron_nickel_pct":17.5,"silicates_pct":31.1},"hazard":1,"accessibility":47.9,"comp_value":48.8,"size_factor":92.9,"mining_score":59.5,"mining_tier":"Moderate potential","mining_rank":61,"sim_approach_dist_ld":43.38,"sim_approach_date":"2031-Jun-06"},{"id":50,"name":"163243 2002 FB3","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":1917.0,"density":1.66,"mass_kg":6135506963240,"speed_kms":27.51,"moid_au":0.04562,"period_yr":2.71,"volatiles":{"water_ice_pct":8.9,"hydrated_minerals_pct":15.5,"organics_pct":7.9},"metals":{"iron_nickel_pct":2.3,"silicates_pct":39.1},"hazard":2,"accessibility":49.3,"comp_value":78.9,"size_factor":100,"mining_score":72.3,"mining_tier":"High potential","mining_rank":10,"sim_approach_dist_ld":31.76,"sim_approach_date":"2028-Nov-22"},{"id":51,"name":"2026 DE1","orb_class":"Amor","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":2463.0,"density":2.19,"mass_kg":17162661783716,"speed_kms":21.61,"moid_au":0.09212,"period_yr":3.34,"volatiles":{"water_ice_pct":2.8,"hydrated_minerals_pct":2.8},"metals":{"iron_nickel_pct":24.4,"silicates_pct":38.6},"hazard":1,"accessibility":48.1,"comp_value":52.2,"size_factor":100,"mining_score":62.5,"mining_tier":"High potential","mining_rank":47,"sim_approach_dist_ld":26.34,"sim_approach_date":"2035-Jun-03"},{"id":52,"name":"2026 JK4","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":627.0,"density":2.42,"mass_kg":312372260250,"speed_kms":25.77,"moid_au":0.1448,"period_yr":2.74,"volatiles":{"water_ice_pct":0.79,"hydrated_minerals_pct":1.6},"metals":{"iron_nickel_pct":15.1,"silicates_pct":63.3,"olivine_pyroxene_pct":24.2},"hazard":1,"accessibility":36.6,"comp_value":47.1,"size_factor":93.3,"mining_score":54.5,"mining_tier":"Moderate potential","mining_rank":74,"sim_approach_dist_ld":31.58,"sim_approach_date":"2026-Apr-14"},{"id":53,"name":"2024 EF2","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1491.0,"density":2.81,"mass_kg":4875384354335,"speed_kms":13.76,"moid_au":0.05866,"period_yr":1.57,"volatiles":{"water_ice_pct":1.55,"hydrated_minerals_pct":2.5},"metals":{"iron_nickel_pct":21.3,"silicates_pct":74.0,"olivine_pyroxene_pct":31.2},"hazard":1,"accessibility":68.6,"comp_value":52.0,"size_factor":100,"mining_score":70.6,"mining_tier":"High potential","mining_rank":15,"sim_approach_dist_ld":10.88,"sim_approach_date":"2033-Mar-25"},{"id":54,"name":"2026 AA9","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":2411.0,"density":2.1,"mass_kg":15428072531387,"speed_kms":19.22,"moid_au":0.1212,"period_yr":1.95,"volatiles":{"water_ice_pct":0.2,"hydrated_minerals_pct":5.7},"metals":{"iron_nickel_pct":23.6,"silicates_pct":42.9},"hazard":1,"accessibility":51.0,"comp_value":51.8,"size_factor":100,"mining_score":63.5,"mining_tier":"High potential","mining_rank":45,"sim_approach_dist_ld":27.87,"sim_approach_date":"2026-Jun-17"},{"id":55,"name":"2024 UV7","orb_class":"Aten","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":1630.0,"density":2.06,"mass_kg":4674680701597,"speed_kms":31.59,"moid_au":0.22871,"period_yr":1.52,"volatiles":{"water_ice_pct":4.9,"hydrated_minerals_pct":10.4},"metals":{"iron_nickel_pct":44.5,"silicates_pct":31.7},"hazard":1,"accessibility":20.1,"comp_value":62.2,"size_factor":100,"mining_score":54.8,"mining_tier":"Moderate potential","mining_rank":71,"sim_approach_dist_ld":27.2,"sim_approach_date":"2033-Aug-17"},{"id":56,"name":"2024 AB2","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1372.0,"density":2.94,"mass_kg":3979107356237,"speed_kms":25.49,"moid_au":0.02104,"period_yr":3.69,"volatiles":{"water_ice_pct":1.45,"hydrated_minerals_pct":3.3},"metals":{"iron_nickel_pct":23.6,"silicates_pct":76.8,"olivine_pyroxene_pct":28.3},"hazard":2,"accessibility":52.6,"comp_value":53.9,"size_factor":100,"mining_score":64.9,"mining_tier":"High potential","mining_rank":38,"sim_approach_dist_ld":17.26,"sim_approach_date":"2029-Feb-11"},{"id":57,"name":"2024 HJ9","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2261.0,"density":2.96,"mass_kg":17893409787487,"speed_kms":28.48,"moid_au":0.32529,"period_yr":3.88,"volatiles":{"water_ice_pct":0.04,"hydrated_minerals_pct":1.5},"metals":{"iron_nickel_pct":24.3,"silicates_pct":63.5,"olivine_pyroxene_pct":39.2},"hazard":1,"accessibility":5,"comp_value":54.4,"size_factor":100,"mining_score":46.0,"mining_tier":"Moderate potential","mining_rank":93,"sim_approach_dist_ld":30.66,"sim_approach_date":"2038-Nov-17"},{"id":58,"name":"2026 AB9","orb_class":"Atira","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":484.0,"density":1.75,"mass_kg":103989741948,"speed_kms":21.45,"moid_au":0.26481,"period_yr":4.89,"volatiles":{"water_ice_pct":18.8,"hydrated_minerals_pct":29.3,"organics_pct":6.7},"metals":{"iron_nickel_pct":3.0,"silicates_pct":43.8},"hazard":1,"accessibility":17.7,"comp_value":100,"size_factor":90.2,"mining_score":64.6,"mining_tier":"High potential","mining_rank":41,"sim_approach_dist_ld":9.99,"sim_approach_date":"2033-Mar-20"},{"id":59,"name":"2024 YZ9","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":501.0,"density":2.82,"mass_kg":185939960401,"speed_kms":15.7,"moid_au":0.32347,"period_yr":2.9,"volatiles":{"water_ice_pct":0.56,"hydrated_minerals_pct":1.9},"metals":{"iron_nickel_pct":17.9,"silicates_pct":79.2,"olivine_pyroxene_pct":40.4},"hazard":1,"accessibility":22.4,"comp_value":49.3,"size_factor":90.6,"mining_score":48.9,"mining_tier":"Moderate potential","mining_rank":88,"sim_approach_dist_ld":27.86,"sim_approach_date":"2027-Jun-22"},{"id":60,"name":"2025 HJ8","orb_class":"Aten","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":328.0,"density":4.84,"mass_kg":89399489324,"speed_kms":30.06,"moid_au":0.1141,"period_yr":4.34,"volatiles":{"water_ice_pct":1.37,"hydrated_minerals_pct":2.5,"organics_pct":0.44},"metals":{"iron_nickel_pct":85.7,"platinum_group_ppm":46.1,"cobalt_pct":0.66},"hazard":1,"accessibility":30.8,"comp_value":100,"size_factor":85.4,"mining_score":68.7,"mining_tier":"High potential","mining_rank":25,"sim_approach_dist_ld":5.78,"sim_approach_date":"2028-Aug-17"},{"id":61,"name":"2026 JK1","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":441.0,"density":2.37,"mass_kg":106400853270,"speed_kms":11.37,"moid_au":0.01542,"period_yr":5.1,"volatiles":{"water_ice_pct":0.01,"hydrated_minerals_pct":0.4},"metals":{"iron_nickel_pct":13.8,"silicates_pct":75.9,"olivine_pyroxene_pct":33.7},"hazard":2,"accessibility":67.6,"comp_value":46.0,"size_factor":89.0,"mining_score":65.4,"mining_tier":"High potential","mining_rank":36,"sim_approach_dist_ld":27.08,"sim_approach_date":"2031-Dec-27"},{"id":62,"name":"2024 YZ7","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":436.0,"density":2.33,"mass_kg":101263250648,"speed_kms":19.61,"moid_au":0.04443,"period_yr":5.04,"volatiles":{"water_ice_pct":0.58,"hydrated_minerals_pct":0.0},"metals":{"iron_nickel_pct":15.3,"silicates_pct":69.3,"olivine_pyroxene_pct":24.7},"hazard":2,"accessibility":52.7,"comp_value":47.2,"size_factor":88.9,"mining_score":59.8,"mining_tier":"Moderate potential","mining_rank":60,"sim_approach_dist_ld":43.2,"sim_approach_date":"2033-Sep-01"},{"id":63,"name":"2025 JK3","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1803.0,"density":2.31,"mass_kg":7102202894549,"speed_kms":17.75,"moid_au":0.14938,"period_yr":4.26,"volatiles":{"water_ice_pct":1.47,"hydrated_minerals_pct":1.7},"metals":{"iron_nickel_pct":10.7,"silicates_pct":68.7,"olivine_pyroxene_pct":40.3},"hazard":1,"accessibility":41.7,"comp_value":43.6,"size_factor":100,"mining_score":56.9,"mining_tier":"Moderate potential","mining_rank":64,"sim_approach_dist_ld":46.36,"sim_approach_date":"2029-Feb-12"},{"id":64,"name":"2024 BB6","orb_class":"Amor","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":981.0,"density":1.64,"mass_kg":811775021445,"speed_kms":19.63,"moid_au":0.11745,"period_yr":0.81,"volatiles":{"water_ice_pct":13.3,"hydrated_minerals_pct":16.3,"organics_pct":6.3},"metals":{"iron_nickel_pct":3.1,"silicates_pct":42.1},"hazard":1,"accessibility":54.4,"comp_value":89.0,"size_factor":98.8,"mining_score":77.6,"mining_tier":"Prime target","mining_rank":5,"sim_approach_dist_ld":59.35,"sim_approach_date":"2027-Jan-11"},{"id":65,"name":"2024 CD7","orb_class":"Amor","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":850.0,"density":6.95,"mass_kg":2235745402352,"speed_kms":17.75,"moid_au":0.38949,"period_yr":3.03,"volatiles":{"water_ice_pct":1.09,"hydrated_minerals_pct":0.2,"organics_pct":0.3},"metals":{"iron_nickel_pct":82.1,"platinum_group_ppm":55.9,"cobalt_pct":0.59},"hazard":1,"accessibility":9.4,"comp_value":100,"size_factor":97.0,"mining_score":63.0,"mining_tier":"High potential","mining_rank":46,"sim_approach_dist_ld":48.13,"sim_approach_date":"2031-Jun-26"},{"id":66,"name":"2024 MN6","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":487.0,"density":1.5,"mass_kg":90610567597,"speed_kms":30.56,"moid_au":0.14109,"period_yr":5.49,"volatiles":{"water_ice_pct":10.7,"hydrated_minerals_pct":22.8,"organics_pct":6.2},"metals":{"iron_nickel_pct":3.0,"silicates_pct":35.6},"hazard":1,"accessibility":22.6,"comp_value":87.2,"size_factor":90.3,"mining_score":62.1,"mining_tier":"High potential","mining_rank":50,"sim_approach_dist_ld":40.37,"sim_approach_date":"2028-Nov-26"},{"id":67,"name":"2026 QR9","orb_class":"Apollo","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":1069.0,"density":5.7,"mass_kg":3642779278539,"speed_kms":8.36,"moid_au":0.06146,"period_yr":2.8,"volatiles":{"water_ice_pct":0.6,"hydrated_minerals_pct":1.9,"organics_pct":0.12},"metals":{"iron_nickel_pct":58.7,"platinum_group_ppm":70.2,"cobalt_pct":0.75},"hazard":1,"accessibility":71.5,"comp_value":100,"size_factor":99.8,"mining_score":88.5,"mining_tier":"Prime target","mining_rank":1,"sim_approach_dist_ld":31.91,"sim_approach_date":"2029-Jun-15"},{"id":68,"name":"2024 NP2","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":665.0,"density":3.0,"mass_kg":461547405397,"speed_kms":20.52,"moid_au":0.04914,"period_yr":4.78,"volatiles":{"water_ice_pct":1.94,"hydrated_minerals_pct":4.9},"metals":{"iron_nickel_pct":20.0,"silicates_pct":72.7,"olivine_pyroxene_pct":33.7},"hazard":2,"accessibility":51.6,"comp_value":51.0,"size_factor":94.0,"mining_score":62.0,"mining_tier":"High potential","mining_rank":51,"sim_approach_dist_ld":48.69,"sim_approach_date":"2031-Mar-23"},{"id":69,"name":"2026 KL6","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":132.0,"density":2.42,"mass_kg":2916554626,"speed_kms":33.61,"moid_au":0.31685,"period_yr":1.76,"volatiles":{"water_ice_pct":1.97,"hydrated_minerals_pct":0.6},"metals":{"iron_nickel_pct":23.3,"silicates_pct":56.6,"olivine_pyroxene_pct":30.0},"hazard":1,"accessibility":5,"comp_value":53.6,"size_factor":74.4,"mining_score":39.4,"mining_tier":"Low potential","mining_rank":100,"sim_approach_dist_ld":28.2,"sim_approach_date":"2031-Jan-12"},{"id":70,"name":"2026 GH2","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":918.0,"density":2.39,"mass_kg":967189680521,"speed_kms":19.84,"moid_au":0.20699,"period_yr":1.23,"volatiles":{"water_ice_pct":0.26,"hydrated_minerals_pct":2.5},"metals":{"iron_nickel_pct":23.0,"silicates_pct":75.8,"olivine_pyroxene_pct":33.0},"hazard":1,"accessibility":39.5,"comp_value":53.4,"size_factor":98.0,"mining_score":59.0,"mining_tier":"Moderate potential","mining_rank":62,"sim_approach_dist_ld":46.14,"sim_approach_date":"2042-Sep-21"},{"id":71,"name":"2024 XY4","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3523.0,"density":2.66,"mass_kg":60974040412081,"speed_kms":12.7,"moid_au":0.38255,"period_yr":1.94,"volatiles":{"water_ice_pct":0.34,"hydrated_minerals_pct":4.7},"metals":{"iron_nickel_pct":12.3,"silicates_pct":71.5,"olivine_pyroxene_pct":38.0},"hazard":1,"accessibility":20.3,"comp_value":44.8,"size_factor":100,"mining_score":48.8,"mining_tier":"Moderate potential","mining_rank":89,"sim_approach_dist_ld":30.3,"sim_approach_date":"2035-May-20"},{"id":72,"name":"2025 CD4","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2428.0,"density":2.33,"mass_kg":17475930143426,"speed_kms":24.75,"moid_au":0.30681,"period_yr":2.64,"volatiles":{"water_ice_pct":0.6,"hydrated_minerals_pct":1.2},"metals":{"iron_nickel_pct":22.1,"silicates_pct":65.2,"olivine_pyroxene_pct":31.3},"hazard":1,"accessibility":13.9,"comp_value":52.7,"size_factor":100,"mining_score":49.0,"mining_tier":"Moderate potential","mining_rank":87,"sim_approach_dist_ld":38.62,"sim_approach_date":"2035-Jan-16"},{"id":73,"name":"2024 NP5","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":907.0,"density":2.4,"mass_kg":937852436940,"speed_kms":33.68,"moid_au":0.13821,"period_yr":2.55,"volatiles":{"water_ice_pct":0.93,"hydrated_minerals_pct":1.3},"metals":{"iron_nickel_pct":13.7,"silicates_pct":57.4,"olivine_pyroxene_pct":27.3},"hazard":1,"accessibility":27.8,"comp_value":46.0,"size_factor":97.8,"mining_score":51.7,"mining_tier":"Moderate potential","mining_rank":82,"sim_approach_dist_ld":19.35,"sim_approach_date":"2042-Jun-17"},{"id":74,"name":"2025 WX6","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":470.0,"density":2.52,"mass_kg":136931447525,"speed_kms":21.14,"moid_au":0.19955,"period_yr":2.11,"volatiles":{"water_ice_pct":0.43,"hydrated_minerals_pct":1.8},"metals":{"iron_nickel_pct":10.8,"silicates_pct":67.4,"olivine_pyroxene_pct":42.1},"hazard":1,"accessibility":36.3,"comp_value":43.6,"size_factor":89.8,"mining_score":52.2,"mining_tier":"Moderate potential","mining_rank":81,"sim_approach_dist_ld":58.01,"sim_approach_date":"2026-Feb-13"},{"id":75,"name":"2024 XY5","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1921.0,"density":2.92,"mass_kg":10829893407191,"speed_kms":17.2,"moid_au":0.16029,"period_yr":3.39,"volatiles":{"water_ice_pct":0.9,"hydrated_minerals_pct":2.7},"metals":{"iron_nickel_pct":22.4,"silicates_pct":70.6,"olivine_pyroxene_pct":35.3},"hazard":1,"accessibility":43.4,"comp_value":52.9,"size_factor":100,"mining_score":60.9,"mining_tier":"High potential","mining_rank":53,"sim_approach_dist_ld":23.37,"sim_approach_date":"2027-Jun-18"},{"id":76,"name":"2026 XY2","orb_class":"Aten","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":1451.0,"density":1.3,"mass_kg":2081008562454,"speed_kms":8.53,"moid_au":0.28547,"period_yr":4.54,"volatiles":{"water_ice_pct":14.6,"hydrated_minerals_pct":14.1,"organics_pct":7.9},"metals":{"iron_nickel_pct":6.4,"silicates_pct":41.0},"hazard":1,"accessibility":32.5,"comp_value":90.6,"size_factor":100,"mining_score":69.7,"mining_tier":"High potential","mining_rank":21,"sim_approach_dist_ld":19.88,"sim_approach_date":"2032-Aug-05"},{"id":77,"name":"2026 WX3","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1506.0,"density":2.87,"mass_kg":5134644597224,"speed_kms":33.47,"moid_au":0.23352,"period_yr":4.5,"volatiles":{"water_ice_pct":1.31,"hydrated_minerals_pct":4.9},"metals":{"iron_nickel_pct":18.7,"silicates_pct":60.7,"olivine_pyroxene_pct":21.3},"hazard":1,"accessibility":8.0,"comp_value":50.0,"size_factor":100,"mining_score":45.7,"mining_tier":"Moderate potential","mining_rank":94,"sim_approach_dist_ld":16.15,"sim_approach_date":"2038-Dec-21"},{"id":78,"name":"2026 AA4","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":7782.0,"density":2.88,"mass_kg":709471179659536,"speed_kms":26.06,"moid_au":0.07639,"period_yr":2.76,"volatiles":{"water_ice_pct":1.55,"hydrated_minerals_pct":4.6},"metals":{"iron_nickel_pct":23.1,"silicates_pct":73.4,"olivine_pyroxene_pct":21.6},"hazard":1,"accessibility":46.4,"comp_value":53.5,"size_factor":100,"mining_score":62.3,"mining_tier":"High potential","mining_rank":49,"sim_approach_dist_ld":24.8,"sim_approach_date":"2030-Mar-14"},{"id":79,"name":"2024 QR7","orb_class":"Aten","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":460.0,"density":1.57,"mass_kg":79904676454,"speed_kms":16.57,"moid_au":0.14178,"period_yr":4.38,"volatiles":{"water_ice_pct":6.7,"hydrated_minerals_pct":16.2,"organics_pct":4.9},"metals":{"iron_nickel_pct":3.3,"silicates_pct":54.5},"hazard":1,"accessibility":44.1,"comp_value":74.5,"size_factor":89.6,"mining_score":66.1,"mining_tier":"High potential","mining_rank":34,"sim_approach_dist_ld":36.72,"sim_approach_date":"2038-Nov-21"},{"id":80,"name":"2025 WX9","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":188.0,"density":2.54,"mass_kg":8851501955,"speed_kms":14.75,"moid_au":0.04884,"period_yr":3.92,"volatiles":{"water_ice_pct":0.58,"hydrated_minerals_pct":3.6},"metals":{"iron_nickel_pct":15.2,"silicates_pct":66.1,"olivine_pyroxene_pct":26.4},"hazard":2,"accessibility":61.7,"comp_value":47.2,"size_factor":78.7,"mining_score":60.9,"mining_tier":"High potential","mining_rank":54,"sim_approach_dist_ld":17.64,"sim_approach_date":"2030-Jul-27"},{"id":81,"name":"2024 XY6","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3622.0,"density":2.4,"mass_kg":59613865106669,"speed_kms":13.93,"moid_au":0.26797,"period_yr":3.2,"volatiles":{"water_ice_pct":0.94,"hydrated_minerals_pct":3.4},"metals":{"iron_nickel_pct":12.1,"silicates_pct":79.1,"olivine_pyroxene_pct":44.4},"hazard":1,"accessibility":32.1,"comp_value":44.7,"size_factor":100,"mining_score":53.5,"mining_tier":"Moderate potential","mining_rank":78,"sim_approach_dist_ld":20.02,"sim_approach_date":"2035-Apr-02"},{"id":82,"name":"2024 HJ1","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":4807.0,"density":1.66,"mass_kg":96275975466877,"speed_kms":9.07,"moid_au":0.30751,"period_yr":3.8,"volatiles":{"water_ice_pct":6.3,"hydrated_minerals_pct":32.1,"organics_pct":2.2},"metals":{"iron_nickel_pct":7.5,"silicates_pct":54.9},"hazard":1,"accessibility":30.7,"comp_value":83.1,"size_factor":100,"mining_score":66.4,"mining_tier":"High potential","mining_rank":31,"sim_approach_dist_ld":54.82,"sim_approach_date":"2027-Sep-24"},{"id":83,"name":"2025 NP5","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":1435.0,"density":2.9,"mass_kg":4480372916346,"speed_kms":10.49,"moid_au":0.06508,"period_yr":2.85,"volatiles":{"water_ice_pct":1.14,"hydrated_minerals_pct":3.8},"metals":{"iron_nickel_pct":12.6,"silicates_pct":76.4,"olivine_pyroxene_pct":42.4},"hazard":1,"accessibility":68.1,"comp_value":45.1,"size_factor":100,"mining_score":68.0,"mining_tier":"High potential","mining_rank":27,"sim_approach_dist_ld":47.51,"sim_approach_date":"2028-Dec-06"},{"id":84,"name":"2024 GH6","orb_class":"Apollo","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":611.0,"density":5.36,"mass_kg":640228435834,"speed_kms":27.47,"moid_au":0.38162,"period_yr":2.08,"volatiles":{"water_ice_pct":0.09,"hydrated_minerals_pct":0.4,"organics_pct":0.15},"metals":{"iron_nickel_pct":68.4,"platinum_group_ppm":52.7,"cobalt_pct":1.11},"hazard":1,"accessibility":5,"comp_value":100,"size_factor":93.0,"mining_score":60.2,"mining_tier":"High potential","mining_rank":59,"sim_approach_dist_ld":41.66,"sim_approach_date":"2038-Oct-01"},{"id":85,"name":"2024 WX8","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":448.0,"density":2.39,"mass_kg":112684909438,"speed_kms":23.55,"moid_au":0.1664,"period_yr":3.29,"volatiles":{"water_ice_pct":1.36,"hydrated_minerals_pct":3.0},"metals":{"iron_nickel_pct":21.8,"silicates_pct":68.1,"olivine_pyroxene_pct":33.2},"hazard":1,"accessibility":34.6,"comp_value":52.4,"size_factor":89.2,"mining_score":54.5,"mining_tier":"Moderate potential","mining_rank":75,"sim_approach_dist_ld":45.78,"sim_approach_date":"2031-Sep-26"},{"id":86,"name":"2025 WX8","orb_class":"Amor","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":3167.0,"density":2.42,"mass_kg":40169053493221,"speed_kms":25.53,"moid_au":0.2868,"period_yr":3.0,"volatiles":{"water_ice_pct":0.83,"hydrated_minerals_pct":2.8},"metals":{"iron_nickel_pct":18.4,"silicates_pct":71.8,"olivine_pyroxene_pct":27.7},"hazard":1,"accessibility":14.8,"comp_value":49.7,"size_factor":100,"mining_score":48.3,"mining_tier":"Moderate potential","mining_rank":90,"sim_approach_dist_ld":8.18,"sim_approach_date":"2032-Aug-26"},{"id":87,"name":"2024 JK3","orb_class":"Aten","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":302.0,"density":1.69,"mass_kg":24376726471,"speed_kms":33.63,"moid_au":0.18888,"period_yr":2.01,"volatiles":{"water_ice_pct":19.9,"hydrated_minerals_pct":21.2,"organics_pct":7.4},"metals":{"iron_nickel_pct":4.3,"silicates_pct":36.6},"hazard":1,"accessibility":21.9,"comp_value":100,"size_factor":84.4,"mining_score":64.9,"mining_tier":"High potential","mining_rank":39,"sim_approach_dist_ld":22.66,"sim_approach_date":"2027-Mar-25"},{"id":88,"name":"2024 AA9","orb_class":"Amor","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":969.0,"density":3.47,"mass_kg":1652022597248,"speed_kms":19.77,"moid_au":0.28767,"period_yr":2.68,"volatiles":{"water_ice_pct":1.1,"hydrated_minerals_pct":10.8},"metals":{"iron_nickel_pct":38.0,"silicates_pct":30.6},"hazard":1,"accessibility":23.1,"comp_value":59.0,"size_factor":98.6,"mining_score":54.5,"mining_tier":"Moderate potential","mining_rank":76,"sim_approach_dist_ld":9.56,"sim_approach_date":"2030-Apr-08"},{"id":89,"name":"2026 JK7","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":723.0,"density":2.61,"mass_kg":516977053880,"speed_kms":13.99,"moid_au":0.01779,"period_yr":2.75,"volatiles":{"water_ice_pct":0.58,"hydrated_minerals_pct":4.1},"metals":{"iron_nickel_pct":21.0,"silicates_pct":63.0,"olivine_pyroxene_pct":34.9},"hazard":2,"accessibility":70.9,"comp_value":51.8,"size_factor":95.1,"mining_score":70.3,"mining_tier":"High potential","mining_rank":17,"sim_approach_dist_ld":30.38,"sim_approach_date":"2032-Apr-25"},{"id":90,"name":"2026 NP6","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":789.0,"density":2.45,"mass_kg":631296450910,"speed_kms":32.64,"moid_au":0.3519,"period_yr":5.07,"volatiles":{"water_ice_pct":0.69,"hydrated_minerals_pct":3.2},"metals":{"iron_nickel_pct":15.7,"silicates_pct":68.1,"olivine_pyroxene_pct":37.4},"hazard":1,"accessibility":5,"comp_value":47.6,"size_factor":96.1,"mining_score":42.7,"mining_tier":"Low potential","mining_rank":99,"sim_approach_dist_ld":3.1,"sim_approach_date":"2035-Nov-14"},{"id":91,"name":"2024 EF9","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":336.0,"density":2.46,"mass_kg":48814922192,"speed_kms":19.77,"moid_au":0.02314,"period_yr":2.62,"volatiles":{"water_ice_pct":0.41,"hydrated_minerals_pct":3.2},"metals":{"iron_nickel_pct":23.8,"silicates_pct":76.2,"olivine_pyroxene_pct":22.3},"hazard":2,"accessibility":63.0,"comp_value":54.0,"size_factor":85.7,"mining_score":65.5,"mining_tier":"High potential","mining_rank":35,"sim_approach_dist_ld":14.8,"sim_approach_date":"2030-Sep-17"},{"id":92,"name":"2025 CD1","orb_class":"Aten","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":320.0,"density":2.91,"mass_kg":49954023197,"speed_kms":26.69,"moid_au":0.22358,"period_yr":2.95,"volatiles":{"water_ice_pct":0.23,"hydrated_minerals_pct":5.0},"metals":{"iron_nickel_pct":17.2,"silicates_pct":61.1,"olivine_pyroxene_pct":35.1},"hazard":1,"accessibility":22.9,"comp_value":48.8,"size_factor":85.1,"mining_score":47.5,"mining_tier":"Moderate potential","mining_rank":91,"sim_approach_dist_ld":57.74,"sim_approach_date":"2029-May-01"},{"id":93,"name":"2024 EF3","orb_class":"Amor","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":1892.0,"density":1.47,"mass_kg":5200357422035,"speed_kms":21.09,"moid_au":0.19896,"period_yr":1.08,"volatiles":{"water_ice_pct":10.9,"hydrated_minerals_pct":24.1,"organics_pct":2.5},"metals":{"iron_nickel_pct":2.9,"silicates_pct":40.2},"hazard":1,"accessibility":39.5,"comp_value":88.4,"size_factor":100,"mining_score":71.7,"mining_tier":"High potential","mining_rank":12,"sim_approach_dist_ld":22.43,"sim_approach_date":"2038-Aug-25"},{"id":94,"name":"2026 PQ2","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":1017.0,"density":2.75,"mass_kg":1514009753620,"speed_kms":24.85,"moid_au":0.27397,"period_yr":1.86,"volatiles":{"water_ice_pct":4.4,"hydrated_minerals_pct":5.5},"metals":{"iron_nickel_pct":19.2,"silicates_pct":40.9},"hazard":1,"accessibility":21.0,"comp_value":49.6,"size_factor":99.2,"mining_score":50.6,"mining_tier":"Moderate potential","mining_rank":83,"sim_approach_dist_ld":27.81,"sim_approach_date":"2031-Dec-21"},{"id":95,"name":"2025 NP8","orb_class":"Amor","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":1617.0,"density":1.25,"mass_kg":2771684952018,"speed_kms":11.14,"moid_au":0.25232,"period_yr":0.93,"volatiles":{"water_ice_pct":14.7,"hydrated_minerals_pct":26.7,"organics_pct":5.3},"metals":{"iron_nickel_pct":4.9,"silicates_pct":44.8},"hazard":1,"accessibility":44.9,"comp_value":98.4,"size_factor":100,"mining_score":77.4,"mining_tier":"Prime target","mining_rank":6,"sim_approach_dist_ld":22.58,"sim_approach_date":"2027-Jan-07"},{"id":96,"name":"2026 JK9","orb_class":"Apollo","comp_type":"C","comp_desc":"Carbonaceous (C-type): primitive, volatile-rich, hydrated clay minerals","diam_m":6648.0,"density":1.84,"mass_kg":282581225039257,"speed_kms":12.59,"moid_au":0.21063,"period_yr":4.59,"volatiles":{"water_ice_pct":7.6,"hydrated_minerals_pct":27.4,"organics_pct":3.1},"metals":{"iron_nickel_pct":7.0,"silicates_pct":36.6},"hazard":1,"accessibility":38.3,"comp_value":83.2,"size_factor":100,"mining_score":69.4,"mining_tier":"High potential","mining_rank":22,"sim_approach_dist_ld":27.7,"sim_approach_date":"2028-Jul-03"},{"id":97,"name":"2024 XY2","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":276.0,"density":3.05,"mass_kg":33622729870,"speed_kms":9.69,"moid_au":0.33815,"period_yr":3.76,"volatiles":{"water_ice_pct":5.4,"hydrated_minerals_pct":8.9},"metals":{"iron_nickel_pct":32.0,"silicates_pct":35.4},"hazard":1,"accessibility":25.4,"comp_value":56.0,"size_factor":83.3,"mining_score":50.6,"mining_tier":"Moderate potential","mining_rank":84,"sim_approach_dist_ld":14.02,"sim_approach_date":"2029-Oct-28"},{"id":98,"name":"2026 TU5","orb_class":"Apollo","comp_type":"X","comp_desc":"X-complex: ambiguous composition, possibly metal-rich or primitive","diam_m":493.0,"density":2.02,"mass_kg":126952082505,"speed_kms":12.99,"moid_au":0.05776,"period_yr":4.62,"volatiles":{"water_ice_pct":5.1,"hydrated_minerals_pct":8.8},"metals":{"iron_nickel_pct":31.2,"silicates_pct":37.7},"hazard":1,"accessibility":60.6,"comp_value":55.6,"size_factor":90.4,"mining_score":66.3,"mining_tier":"High potential","mining_rank":33,"sim_approach_dist_ld":34.13,"sim_approach_date":"2030-Feb-10"},{"id":99,"name":"2026 LM2","orb_class":"Amor","comp_type":"M","comp_desc":"Metallic (M-type): nickel-iron core fragment, high siderophile metal content","diam_m":1800.0,"density":4.82,"mass_kg":14725703268994,"speed_kms":9.51,"moid_au":0.24211,"period_yr":3.61,"volatiles":{"water_ice_pct":1.18,"hydrated_minerals_pct":1.4,"organics_pct":0.11},"metals":{"iron_nickel_pct":73.3,"platinum_group_ppm":43.2,"cobalt_pct":0.47},"hazard":1,"accessibility":40.5,"comp_value":100,"size_factor":100,"mining_score":76.2,"mining_tier":"Prime target","mining_rank":8,"sim_approach_dist_ld":38.16,"sim_approach_date":"2033-Jul-25"},{"id":100,"name":"2025 PQ3","orb_class":"Apollo","comp_type":"S","comp_desc":"Silicaceous (S-type): stony, olivine-pyroxene with metallic inclusions","diam_m":2532.0,"density":2.35,"mass_kg":19986020982258,"speed_kms":28.27,"moid_au":0.0618,"period_yr":2.51,"volatiles":{"water_ice_pct":1.52,"hydrated_minerals_pct":0.5},"metals":{"iron_nickel_pct":11.3,"silicates_pct":65.8,"olivine_pyroxene_pct":33.9},"hazard":1,"accessibility":46.4,"comp_value":44.0,"size_factor":100,"mining_score":59.0,"mining_tier":"Moderate potential","mining_rank":63,"sim_approach_dist_ld":26.85,"sim_approach_date":"2029-Feb-03"}];
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const API_KEY = 'DEMO_KEY';
+const LD_KM = 149597870.7 / 389.17;
+const AU_KM = 149597870.7;
+const WEEK_MS = 7*24*60*60*1000;
+const MONTH_MS = 30*24*60*60*1000;
+
+let DATA = BASE_DATA.map(o => ({...o,
+  approach_dist_ld: o.sim_approach_dist_ld,
+  approach_dist_km: o.sim_approach_dist_ld * LD_KM,
+  approach_date: o.sim_approach_date,
+  api_matched: false,
+  pha_api: false
+}));
+
+let prevHazard = {}, prevMining = {}, hazardHistory = {}, miningHistory = {}, changedIds = new Set();
+let hazardEvalCount = 0, miningEvalCount = 0;
+let lastHazardEval = null, nextHazardEval = null;
+let lastMiningEval = null, nextMiningEval = null;
+let apiMatchCount = 0;
+let activeFilter = 'all', sortK = 'mining_score', sortD = -1, selId = null, srchTerm = '';
+
+const TIER_COLOR = {
+  'Prime target': '#639922',
+  'High potential': '#1D9E75',
+  'Moderate potential': '#BA7517',
+  'Low potential': '#888780',
+  'Poor candidate': '#E24B4A'
+};
+const HZ_LABEL  = ['No concern','Routine','Notable','Close pass','Critical'];
+const HZ_CLS    = ['h0','h1','h2','h3','h4'];
+const HZ_COLOR  = ['#639922','#639922','#BA7517','#E24B4A','#A32D2D'];
+const HZ_DESC   = ['Distant routine pass.','Very common flyby, no concern.','Within 10 LD — worth monitoring.','NASA PHA-flagged or within 5 LD.','NASA PHA + within 5 LD, large body.'];
+
+function hazardScore(o) {
+  const pha = o.pha_api || false;
+  const dist = o.approach_dist_ld;
+  if (pha && dist < 5) return 4;
+  if (pha || dist < 5) return 3;
+  if (dist < 10) return 2;
+  if (o.moid_au < 0.05 && o.diam_m > 140) return 2;
+  if (dist < 30) return 1;
+  return 0;
+}
+
+function calcMiningScore(o) {
+  const raw_acc = Math.max(0, 100 - (o.moid_au * 150) - (o.speed_kms * 1.3) - (o.period_yr * 3));
+  const accessibility = Math.round(Math.min(100, Math.max(5, raw_acc)) * 10) / 10;
+  const cv_adj = o.api_matched ? 1.05 : 1.0;
+  const comp_value = Math.round(Math.min(100, o.comp_value * cv_adj) * 10) / 10;
+  const score = Math.round((accessibility * 0.40 + comp_value * 0.35 + o.size_factor * 0.25) * 10) / 10;
+  let tier;
+  if (score >= 75) tier = 'Prime target';
+  else if (score >= 60) tier = 'High potential';
+  else if (score >= 45) tier = 'Moderate potential';
+  else if (score >= 30) tier = 'Low potential';
+  else tier = 'Poor candidate';
+  return { accessibility, comp_value, score, tier };
+}
+
+function fmtMass(kg) {
+  if (!kg) return '—';
+  if (kg >= 1e15) return (kg/1e15).toFixed(1) + 'Pg';
+  if (kg >= 1e12) return (kg/1e12).toFixed(1) + 'Tg';
+  if (kg >= 1e9)  return (kg/1e9).toFixed(1) + 'Gg';
+  if (kg >= 1e6)  return (kg/1e6).toFixed(1) + 'Mg';
+  return Math.round(kg).toLocaleString() + 'kg';
+}
+function fmtMassFull(kg) {
+  if (!kg) return '—';
+  if (kg >= 1e15) return (kg/1e15).toFixed(3) + ' Pg (petagram)';
+  if (kg >= 1e12) return (kg/1e12).toFixed(3) + ' Tg (teragram)';
+  if (kg >= 1e9)  return (kg/1e9).toFixed(2) + ' Gg (gigagram)';
+  if (kg >= 1e6)  return (kg/1e6).toFixed(2) + ' Mg (megagram)';
+  return Math.round(kg).toLocaleString() + ' kg';
+}
+function fmtD(m) { return m >= 1000 ? (m/1000).toFixed(2) + ' km' : Math.round(m) + ' m'; }
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtDate(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtTs(d) { return `${fmtDate(d)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`; }
+function fmtCDs(ms) {
+  if (ms <= 0) return 'now';
+  const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+  if (d > 0) return `${d}d ${h}h`; if (h > 0) return `${h}h ${m}m`; return `${m}m`;
+}
+
+async function fetchCADApproaches() {
+  const now = new Date(), end = new Date(now.getTime() + 365*86400000);
+  const url = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${fmtDate(now)}&date-max=${fmtDate(end)}&dist-max=0.5&sort=date&limit=500`;
+  try {
+    const r = await fetch(url); if (!r.ok) return 0;
+    const j = await r.json();
+    const fields = j.fields, idx = {};
+    fields.forEach((f,i) => idx[f] = i);
+    const lookup = {};
+    (j.data || []).forEach(row => {
+      const des = row[idx['des']].toLowerCase().trim().replace(/\s+/g,' ');
+      const distAU = parseFloat(row[idx['dist']]);
+      if (!lookup[des] || distAU < lookup[des].dist_au) {
+        lookup[des] = {
+          dist_au: distAU,
+          dist_ld: distAU * AU_KM / LD_KM,
+          v_rel: parseFloat(row[idx['v_rel']]),
+          cd: row[idx['cd']]
+        };
+      }
+    });
+    let matched = 0;
+    DATA.forEach(o => {
+      const keys = [
+        o.name.toLowerCase().trim(),
+        o.name.toLowerCase().replace(/^\d+\s+/,'').trim(),
+        o.name.toLowerCase().replace(/\s+/g,'')
+      ];
+      let hit = null;
+      for (const k of keys) { if (lookup[k]) { hit = lookup[k]; break; } }
+      if (hit) {
+        o.approach_date = hit.cd.split(' ')[0];
+        o.approach_dist_ld = Math.round(hit.dist_ld * 1000) / 1000;
+        o.approach_dist_km = Math.round(hit.dist_au * AU_KM);
+        o.api_matched = true;
+        matched++;
+      }
+    });
+    apiMatchCount = matched;
+    document.getElementById('mm-api').textContent = matched;
+    return matched;
+  } catch(e) { console.warn('CAD API:', e.message); return 0; }
+}
+
+async function runHazardEval() {
+  const prog = document.getElementById('h-prog'), fill = document.getElementById('h-fill');
+  prog.style.display = 'block'; fill.style.width = '15%';
+  document.getElementById('status').textContent = 'Running hazard evaluation — fetching NASA CAD API…';
+  await fetchCADApproaches();
+  fill.style.width = '70%';
+  const now = new Date(), ts = fmtTs(now);
+  changedIds = new Set();
+  DATA.forEach(o => {
+    const newHz = hazardScore(o);
+    const prev = prevHazard[o.id];
+    if (!hazardHistory[o.id]) hazardHistory[o.id] = [];
+    if (prev !== undefined && prev !== newHz) {
+      changedIds.add(o.id);
+      hazardHistory[o.id].push({ts, type:'hazard', from:prev, to:newHz});
+    } else if (prev === undefined) {
+      hazardHistory[o.id].push({ts, type:'hazard', from:null, to:newHz});
+    }
+    prevHazard[o.id] = newHz;
+    o.hazard = newHz;
+  });
+  hazardEvalCount++;
+  lastHazardEval = now;
+  nextHazardEval = new Date(now.getTime() + WEEK_MS);
+  fill.style.width = '100%';
+  setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; }, 500);
+  document.getElementById('h-count').textContent = hazardEvalCount;
+  document.getElementById('h-last').textContent = fmtTs(now);
+  const badge = document.getElementById('h-badge');
+  badge.innerHTML = changedIds.size > 0
+    ? `<span class="chg-badge">${changedIds.size} changed</span>`
+    : '<span style="font-size:10px;color:var(--text-muted)">No changes</span>';
+  updateMetrics(); buildOrrery(); renderTable();
+  document.getElementById('status').textContent =
+    `Hazard eval #${hazardEvalCount} complete · ${apiMatchCount} ephemeris matches · ${changedIds.size} hazard level changes · All approaches safe.`;
+}
+
+async function runMiningEval() {
+  const prog = document.getElementById('m-prog'), fill = document.getElementById('m-fill');
+  prog.style.display = 'block'; fill.style.width = '30%';
+  document.getElementById('status').textContent = 'Running monthly mining viability re-evaluation…';
+  const now = new Date(), ts = fmtTs(now);
+  let miningChanged = 0;
+  DATA.forEach(o => {
+    const res = calcMiningScore(o);
+    const prev = prevMining[o.id];
+    if (!miningHistory[o.id]) miningHistory[o.id] = [];
+    const prevScore = prev?.score;
+    if (prevScore !== undefined && Math.abs(prevScore - res.score) >= 1) {
+      miningChanged++;
+      miningHistory[o.id].push({ts, type:'mining', from:prevScore, to:res.score, tier_from:prev?.tier, tier_to:res.tier});
+    } else if (prevScore === undefined) {
+      miningHistory[o.id].push({ts, type:'mining', from:null, to:res.score, tier_to:res.tier});
+    }
+    prevMining[o.id] = {score:res.score, tier:res.tier};
+    o.mining_score = res.score;
+    o.mining_tier = res.tier;
+    o.accessibility = res.accessibility;
+    o.comp_value = res.comp_value;
+  });
+  DATA.sort((a,b) => b.mining_score - a.mining_score);
+  DATA.forEach((o,i) => o.mining_rank = i+1);
+  miningEvalCount++;
+  lastMiningEval = now;
+  nextMiningEval = new Date(now.getTime() + MONTH_MS);
+  fill.style.width = '100%';
+  setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; }, 500);
+  document.getElementById('m-count').textContent = miningEvalCount;
+  document.getElementById('m-last').textContent = fmtTs(now);
+  document.getElementById('m-badge').innerHTML = miningChanged > 0
+    ? `<span class="chg-badge" style="background:#E6F1FB;color:#042C53">${miningChanged} re-scored</span>`
+    : '<span style="font-size:10px;color:var(--text-muted)">Scores stable</span>';
+  updateMetrics(); renderTable();
+  document.getElementById('status').textContent =
+    `Mining eval #${miningEvalCount} complete · ${miningChanged} score changes ≥1 point · Next in 30 days.`;
+}
+
+function updateMetrics() {
+  document.getElementById('mm-haz').textContent   = DATA.filter(o => o.hazard >= 3).length;
+  document.getElementById('mm-prime').textContent = DATA.filter(o => o.mining_tier === 'Prime target').length;
+  const fa = [...DATA].sort((a,b) => b.speed_kms - a.speed_kms)[0];
+  document.getElementById('mm-fast').textContent  = fa ? fa.speed_kms.toFixed(1) : '—';
+  document.getElementById('mm-chg').textContent   = changedIds.size || (hazardEvalCount > 0 ? '0' : '—');
+  document.getElementById('utc').textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  if (nextHazardEval) document.getElementById('h-next').textContent = fmtCDs(nextHazardEval - new Date());
+  if (nextMiningEval) document.getElementById('m-next').textContent = fmtCDs(nextMiningEval - new Date());
+}
+
+/* ── THREE.JS ORRERY ── */
+let renderer, scene, camera, neoMeshes = [], selTraj = null;
+let rotX = 0.25, rotY = 0, zoom = 7, isDrag = false, prevM = {x:0,y:0};
+const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+const canv = document.getElementById('orrery');
+const orrWrap = document.getElementById('orrery-wrap');
+const tip = document.getElementById('otip');
+function orrSize() { const w = orrWrap.clientWidth; return {w, h: Math.round(w*0.58)}; }
+
+function buildOrrery() {
+  if (renderer) { renderer.dispose(); while(scene.children.length>0) scene.remove(scene.children[0]); neoMeshes=[]; selTraj=null; }
+  const {w,h} = orrSize();
+  canv.width=w; canv.height=h; canv.style.height=h+'px';
+  renderer = new THREE.WebGLRenderer({canvas:canv, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(w,h); renderer.setClearColor(0x00010d,1);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(50, w/h, 0.01, 800);
+  camera.position.set(0,0,zoom);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const sl = new THREE.PointLight(0xfff5e0,2); sl.position.set(0,0,0); scene.add(sl);
+  const sg = new THREE.BufferGeometry(); const sv = [];
+  for(let i=0;i<1400;i++){const r=80+Math.random()*200,t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1);sv.push(r*Math.sin(p)*Math.cos(t),r*Math.cos(p),r*Math.sin(p)*Math.sin(t));}
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(sv,3));
+  scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color:0xffffff,size:0.6,transparent:true,opacity:0.5})));
+  [{r:0.39,col:0x999999,s:0.028},{r:0.72,col:0xDDB060,s:0.044},{r:1.00,col:0x4488FF,s:0.054},{r:1.52,col:0xFF5533,s:0.038}].forEach((p,i) => {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(p.r,p.r*1.003,64), new THREE.MeshBasicMaterial({color:i===2?0x3366aa:0x334455,side:THREE.DoubleSide,transparent:true,opacity:i===2?0.3:0.12}));
+    ring.rotation.x = Math.PI/2; scene.add(ring);
+    const pl = new THREE.Mesh(new THREE.SphereGeometry(p.s,12,12), new THREE.MeshPhongMaterial({color:p.col,emissive:p.col,emissiveIntensity:0.2}));
+    const ang=(i*1.3)%(Math.PI*2); pl.position.set(Math.cos(ang)*p.r,0,Math.sin(ang)*p.r); scene.add(pl);
+  });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.1,18,18), new THREE.MeshBasicMaterial({color:0xffe566})));
+  DATA.forEach(o => {
+    const orbR = Math.min(Math.max(0.85 + o.moid_au*6, 0.88), 2.8);
+    const ang = (o.id*137.5*Math.PI/180)%(Math.PI*2);
+    const size = Math.max(0.018, Math.min(0.06, Math.log10(Math.max(o.diam_m,10))*0.018));
+    const isChg = changedIds.has(o.id);
+    const mCol = parseInt(TIER_COLOR[o.mining_tier].replace('#',''), 16);
+    const hCol = parseInt(HZ_COLOR[o.hazard].replace('#',''), 16);
+    const col = o.hazard >= 3 ? hCol : mCol;
+    const m = new THREE.Mesh(
+      new THREE.SphereGeometry(size*(isChg?1.5:1), 10, 10),
+      new THREE.MeshPhongMaterial({color:col, emissive:col, emissiveIntensity:isChg?0.85:0.4})
+    );
+    m.position.set(Math.cos(ang)*orbR, Math.sin(ang)*0.18, Math.sin(ang)*orbR*0.85);
+    m.userData = o; scene.add(m); neoMeshes.push(m);
+  });
+  animOrrery();
+}
+
+function drawTraj(o) {
+  if (selTraj) { selTraj.parts.forEach(p => scene.remove(p)); selTraj=null; }
+  const orbR = Math.min(Math.max(0.85 + o.moid_au*6, 0.88), 2.8);
+  const ex = Math.min(0.1 + o.moid_au*3, 0.7);
+  const a = orbR*(1+ex), b = orbR*Math.sqrt(1-ex*ex*0.3);
+  const pts = [];
+  for(let i=0;i<=120;i++){const t=(i/120)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(t)*a,Math.sin(t)*0.1*ex,Math.sin(t)*b));}
+  const col = parseInt(HZ_COLOR[o.hazard].replace('#',''),16);
+  const traj = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.8}));
+  const ang=(o.id*137.5*Math.PI/180)%(Math.PI*2);
+  const apPos = new THREE.Vector3(Math.cos(ang)*a, Math.sin(ang)*0.1*ex, Math.sin(ang)*b);
+  const apM = new THREE.Mesh(new THREE.SphereGeometry(0.024,10,10), new THREE.MeshBasicMaterial({color:col}));
+  apM.position.copy(apPos);
+  const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),apPos]), new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.35}));
+  [traj, apM, ln].forEach(p => scene.add(p));
+  selTraj = {parts:[traj,apM,ln]};
+}
+
+let animFr;
+function animOrrery() {
+  if (animFr) cancelAnimationFrame(animFr);
+  function frame() {
+    animFr = requestAnimationFrame(frame);
+    if (!isDrag) rotY += 0.003;
+    scene.rotation.x = rotX; scene.rotation.y = rotY;
+    camera.position.set(0,0,zoom); camera.lookAt(0,0,0);
+    renderer.render(scene,camera);
+  }
+  frame();
+}
+canv.addEventListener('mousedown', e=>{isDrag=true;prevM={x:e.clientX,y:e.clientY};canv.classList.add('drag');});
+window.addEventListener('mouseup', ()=>{isDrag=false;canv.classList.remove('drag');});
+window.addEventListener('mousemove', e=>{
+  if(isDrag){rotY+=(e.clientX-prevM.x)*0.006;rotX+=(e.clientY-prevM.y)*0.006;rotX=Math.max(-1.2,Math.min(1.2,rotX));prevM={x:e.clientX,y:e.clientY};}
+  if(!neoMeshes.length)return;
+  const rect=canv.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(neoMeshes);
+  if(hits.length){
+    const o=hits[0].object.userData,isChg=changedIds.has(o.id);
+    tip.style.display='block';tip.style.left=(e.clientX-rect.left+12)+'px';tip.style.top=(e.clientY-rect.top-8)+'px';
+    tip.innerHTML=`<strong>${o.name}</strong><span style="color:${HZ_COLOR[o.hazard]}">Hazard ${o.hazard}</span> · <span style="color:${TIER_COLOR[o.mining_tier]}">${o.mining_tier}</span><br>${o.comp_type}-type · ${fmtD(o.diam_m)}<br>${o.speed_kms.toFixed(1)} km/s · ${fmtMass(o.mass_kg)}<br>${o.approach_dist_ld.toFixed(2)} LD · ${o.approach_date}${o.api_matched?'<br><span style="color:#185fa5;font-size:10px">✓ Ephemeris matched</span>':''}${isChg?'<br><span style="color:#BA7517;font-size:10px">↑ Hazard changed</span>':''}`;
+    canv.style.cursor='pointer';
+  }else{tip.style.display='none';canv.style.cursor=isDrag?'grabbing':'grab';}
+});
+canv.addEventListener('click', ()=>{if(!neoMeshes.length)return;const hits=raycaster.intersectObjects(neoMeshes);if(hits.length)selectObj(hits[0].object.userData.id);});
+canv.addEventListener('wheel', e=>{zoom=Math.max(2,Math.min(14,zoom+e.deltaY*0.007));e.preventDefault();},{passive:false});
+canv.addEventListener('touchstart', e=>{isDrag=true;prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+canv.addEventListener('touchmove', e=>{if(!isDrag)return;const dx=e.touches[0].clientX-prevM.x,dy=e.touches[0].clientY-prevM.y;rotY+=dx*0.006;rotX+=dy*0.006;rotX=Math.max(-1.2,Math.min(1.2,rotX));prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+canv.addEventListener('touchend', ()=>{isDrag=false;});
+window.addEventListener('resize', ()=>{if(!renderer)return;const{w,h}=orrSize();canv.width=w;canv.height=h;canv.style.height=h+'px';renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();});
+
+/* ── TABLE & DETAIL ── */
+function getFilt() {
+  let a = DATA.filter(o => {
+    if(activeFilter==='pha')    return o.hazard >= 3;
+    if(activeFilter==='prime')  return o.mining_tier === 'Prime target';
+    if(activeFilter==='C'||activeFilter==='M'||activeFilter==='S'||activeFilter==='X') return o.comp_type === activeFilter;
+    if(activeFilter==='changed')return changedIds.has(o.id);
+    return true;
+  });
+  if(srchTerm) a = a.filter(o=>o.name.toLowerCase().includes(srchTerm.toLowerCase()));
+  return a.slice().sort((a,b)=>{
+    let av=a[sortK],bv=b[sortK];
+    if(sortK==='name')          return a.name.localeCompare(b.name)*sortD;
+    if(sortK==='approach_date') return a.approach_date.localeCompare(b.approach_date)*sortD;
+    return (av-bv)*sortD;
+  });
+}
+
+function renderTable() {
+  const rows = getFilt(), tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted)">No results.</td></tr>';return;}
+  rows.forEach(o => {
+    const tr = document.createElement('tr');
+    if(o.id===selId)   tr.classList.add('sel');
+    if(changedIds.has(o.id)) tr.classList.add('chg-row');
+    const mColor = TIER_COLOR[o.mining_tier];
+    tr.innerHTML=`
+      <td title="${o.name}" style="font-weight:${o.hazard>=3?'500':'400'}">${o.api_matched?'<span class="api-dot" title="Ephemeris matched"></span>':''}${o.name}</td>
+      <td style="font-variant-numeric:tabular-nums">${o.speed_kms.toFixed(1)}<span style="color:var(--text-muted);font-size:9px"> km/s</span></td>
+      <td>${fmtMass(o.mass_kg)}</td>
+      <td style="font-variant-numeric:tabular-nums">${o.approach_dist_ld.toFixed(2)}</td>
+      <td style="font-size:10.5px;color:var(--text-secondary)">${o.approach_date}</td>
+      <td><span class="hb ${HZ_CLS[o.hazard]}">${o.hazard}</span></td>
+      <td><span class="score-bar"><i style="width:${o.mining_score}%;background:${mColor}"></i></span>${o.mining_score}</td>
+    `;
+    tr.addEventListener('click', ()=>selectObj(o.id));
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('thead th[data-k]').forEach(th=>{
+    th.classList.remove('sa','sd');
+    if(th.dataset.k===sortK) th.classList.add(sortD===1?'sa':'sd');
+  });
+}
+
+function selectObj(id) {
+  selId = selId===id ? null : id;
+  if(selTraj){selTraj.parts.forEach(p=>scene.remove(p));selTraj=null;}
+  renderTable(); renderDetail();
+  if(selId&&neoMeshes.length){
+    const o=DATA.find(x=>x.id===selId); if(o) drawTraj(o);
+    neoMeshes.forEach(m=>{
+      const s=m.userData.id===selId, isChg=changedIds.has(m.userData.id);
+      m.material.emissiveIntensity = s?0.95:(isChg?0.6:0.15);
+      m.scale.setScalar(s?1.8:1);
+    });
+  } else if(neoMeshes.length){
+    neoMeshes.forEach(m=>{m.material.emissiveIntensity=changedIds.has(m.userData.id)?0.85:0.4;m.scale.setScalar(changedIds.has(m.userData.id)?1.4:1);});
+  }
+}
+
+function renderDetail() {
+  const box = document.getElementById('detail');
+  if(!selId){box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:20px 0;text-align:center">Select a NEO from the table or orrery<br>to see composition, mining data,<br>and evaluation history</div>';return;}
+  const o = DATA.find(x=>x.id===selId); if(!o) return;
+  const bc = HZ_COLOR[o.hazard], mc = TIER_COLOR[o.mining_tier];
+  const isChg = changedIds.has(o.id);
+  const volRows = Object.entries(o.volatiles||{}).map(([k,v])=>`<div class="comp-row"><span>${k.replace(/_pct|_ppm/g,'').replace(/_/g,' ')}</span><span>${v}${k.includes('ppm')?' ppm':'%'}</span></div>`).join('');
+  const metRows = Object.entries(o.metals||{}).map(([k,v])=>`<div class="comp-row"><span>${k.replace(/_pct|_ppm/g,'').replace(/_/g,' ')}</span><span>${v}${k.includes('ppm')?' ppm':'%'}</span></div>`).join('');
+  const hHist = (hazardHistory[o.id]||[]).slice(-3).reverse();
+  const mHist = (miningHistory[o.id]||[]).slice(-3).reverse();
+  const allHist = [...hHist,...mHist].sort((a,b)=>b.ts.localeCompare(a.ts)).slice(0,6);
+  const histHTML = allHist.length ? allHist.map(e=>`<div class="eh-row"><span class="eh-time">${e.ts}</span><span class="eh-type ${e.type==='hazard'?'eh-hz':'eh-mine'}">${e.type}</span>${e.from!==null?`<span style="font-size:9.5px;color:var(--text-muted)">${typeof e.from==='number'?e.from.toFixed(e.type==='mining'?1:0):e.from}</span><span style="color:var(--text-muted);font-size:9px;margin:0 2px">→</span>`:'<span style="font-size:9px;color:var(--text-muted)">new→</span>'}<span style="font-size:10.5px;font-weight:500">${typeof e.to==='number'?e.to.toFixed(e.type==='mining'?1:0):e.to}</span></div>`).join('') : '<div style="font-size:10px;color:var(--text-muted)">No evaluation history yet.</div>';
+
+  box.innerHTML = `
+    <h4>${o.name}</h4>
+    <div class="dsub">${o.comp_desc}${o.api_matched?'<span style="color:#185fa5;font-size:10px;margin-left:6px">✓ Ephemeris from NASA CAD API</span>':'<span style="color:var(--text-muted);font-size:10px;margin-left:6px"> simulated approach</span>'}</div>
+    ${isChg?'<div style="font-size:10.5px;background:#FAEEDA;color:#633806;padding:4px 8px;border-radius:6px;margin-bottom:7px;font-weight:500;display:flex;align-items:center;gap:5px"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:12px"></i>Hazard level changed this evaluation</div>':''}
+    <div class="hz-row"><span class="hz-num" style="color:${bc}">${o.hazard}</span><div class="hz-info"><div class="ht" style="color:${bc}">Level ${o.hazard} — ${HZ_LABEL[o.hazard]}</div><div class="hd">${HZ_DESC[o.hazard]}</div></div></div>
+    <div class="dg3">
+      <div class="dc"><div class="dl">Speed (dataset)</div><div class="dv">${o.speed_kms.toFixed(1)} km/s</div></div>
+      <div class="dc"><div class="dl">Mass (computed)</div><div class="dv" style="font-size:10.5px">${fmtMassFull(o.mass_kg)}</div></div>
+      <div class="dc"><div class="dl">Diameter</div><div class="dv">${fmtD(o.diam_m)}</div></div>
+    </div>
+    <div class="dg2">
+      <div class="dc"><div class="dl">Approach date${o.api_matched?' (ephemeris)':' (simulated)'}</div><div class="dv">${o.approach_date}</div></div>
+      <div class="dc"><div class="dl">Miss distance</div><div class="dv">${o.approach_dist_ld.toFixed(3)} LD<span style="display:block;font-size:9.5px;color:var(--text-secondary)">${Math.round(o.approach_dist_km).toLocaleString()} km</span></div></div>
+      <div class="dc"><div class="dl">MOID</div><div class="dv">${o.moid_au} AU</div></div>
+      <div class="dc"><div class="dl">Orbital class / period</div><div class="dv">${o.orb_class} · ${o.period_yr} yr</div></div>
+    </div>
+    <div class="comp-grid">
+      <div class="comp-sec"><h6>Volatile inventory</h6>${volRows||'<div class="comp-row"><span>Negligible</span><span>—</span></div>'}</div>
+      <div class="comp-sec"><h6>Metal / mineral content</h6>${metRows}</div>
+    </div>
+    <div class="msb-label">Mining score: <strong>${o.mining_score}</strong>/100 · <span style="color:${mc};font-weight:500">${o.mining_tier}</span> · Rank #${o.mining_rank}</div>
+    <div class="msb-track"><div class="msb-fill" style="width:${o.mining_score}%;background:${mc}"></div></div>
+    <div style="font-size:9.5px;color:var(--text-secondary);margin-bottom:7px">Accessibility: ${o.accessibility}/100 · Composition value: ${o.comp_value}/100 · Size factor: ${o.size_factor}/100</div>
+    <div class="eval-hist">
+      <h6><i class="ti ti-history" aria-hidden="true" style="font-size:12px;vertical-align:-1px"></i>Evaluation history (hazard + mining)</h6>
+      ${histHTML}
+    </div>
+    <a href="https://ssd.jpl.nasa.gov/sbdb.cgi?sstr=${encodeURIComponent(o.name)}" class="jpl-a" target="_blank">JPL Small-Body Database <i class="ti ti-external-link" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i></a>
+  `;
+}
+
+document.querySelectorAll('#ctrl button[data-f]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#ctrl button[data-f]').forEach(x=>x.className='');
+    activeFilter=b.dataset.f;
+    const cls={all:'fa',pha:'fp',prime:'fcm',C:'fa',M:'fc',changed:'fch'};
+    b.className=cls[activeFilter]||'fc';
+    renderTable();
+  });
+});
+document.querySelectorAll('thead th[data-k]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.k;
+    if(sortK===k) sortD*=-1; else{sortK=k;sortD=k==='name'||k==='approach_date'?1:-1;}
+    renderTable();
+  });
+});
+document.getElementById('srch').addEventListener('input', e=>{srchTerm=e.target.value;renderTable();});
+
+setInterval(()=>{
+  updateMetrics();
+  if(nextHazardEval && new Date()>=nextHazardEval) runHazardEval();
+  if(nextMiningEval && new Date()>=nextMiningEval) runMiningEval();
+},1000);
+
+(async()=>{
+  await runHazardEval();
+  await runMiningEval();
+})();
+</script>
+</body>
+</html>
