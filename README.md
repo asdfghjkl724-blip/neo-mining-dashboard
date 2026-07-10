@@ -8,6 +8,7 @@ Each dashboard is a **single self-contained HTML file**. No build step, no serve
 
 | File | What it shows |
 |---|---|
+| [`docs/index.html`](docs/index.html) | Landing page — links to all three dashboards |
 | [`docs/neo100-live-dashboard.html`](docs/neo100-live-dashboard.html) | Full dataset with 3D orrery, composition breakdown, weekly hazard re-evaluation, monthly mining re-evaluation |
 | [`docs/neo-mining-scatter.html`](docs/neo-mining-scatter.html) | Candidate cards, full sortable table, and an accessibility-vs-composition bubble scatter plot |
 | [`docs/neo-mining-radar-breakdown.html`](docs/neo-mining-radar-breakdown.html) | Candidate cards, full table, per-object radar profile, and stacked mining-score breakdown |
@@ -54,12 +55,13 @@ neo-mining-dashboard/
 ├── README.md
 ├── LICENSE
 └── docs/
+    ├── index.html
     ├── neo100-live-dashboard.html
     ├── neo-mining-scatter.html
     └── neo-mining-radar-breakdown.html
 ```
 
-The `docs/` folder is named that way so the repo can be served directly via **GitHub Pages** (Settings → Pages → Deploy from branch → `/docs`) with zero extra configuration.
+The `docs/` folder is named that way so the repo can be served directly via **GitHub Pages** (Settings → Pages → Deploy from branch → `/docs`) with zero extra configuration. Once enabled, the base URL (`https://YOUR_USERNAME.github.io/neo-mining-dashboard/`) resolves to `index.html` and links out to all three dashboards.
 
 ## License
 
