@@ -1,8 +1,21 @@
 # NEO Mining Dashboard
 
-Interactive, standalone dashboards for exploring a 100-object Near-Earth Object (NEO) dataset — composition, mining viability, and impact hazard — with live ephemeris data pulled from NASA's public APIs.
+Interactive dashboards for exploring **real near-Earth objects (NEOs)** — composition, mining viability, and impact hazard — with orbital elements, MOID, diameters, and close-approach dates pulled **live from NASA/JPL's Small-Body Database and Close-Approach APIs**.
 
-Each dashboard is a **single self-contained HTML file**. No build step, no server, no dependencies to install. Open any file directly in a browser and it runs.
+## Real data vs. modeled data
+
+This dashboard draws a clear line between the two:
+
+- **Real, straight from NASA/JPL** (via the SBDB + CAD APIs): object identity, orbit class, semi-major axis, eccentricity, inclination, perihelion/aphelion, period, Earth MOID, orbit condition code, diameter, albedo, absolute magnitude, spectral type, and the next Earth close-approach date/distance/velocity.
+- **Modeled from those real inputs** (clearly flagged in the UI): composition class and volatile/metal percentages are inferred from the object's *real spectral type*; mining score and hazard level are computed from the *real* orbit, MOID, and diameter. These are estimates, not measurements — the banner at the top of each dashboard says so.
+
+The 50 objects are all genuine catalogued NEOs (Apophis, Bennu, Ryugu, Eros, Didymos, Phaethon, Cruithne, plus metal-rich NEOs like 3554 Amun, 6178 1986 DA, 4660 Nereus, and others).
+
+## How the live data works
+
+JPL's APIs don't send CORS headers, so a browser can't call them directly. This repo includes a tiny **Cloudflare Worker** (`worker/jpl-proxy.js`) that relays JPL responses with the needed header, locked to your own origin. Once deployed (free, ~2 minutes), all three dashboards fetch real data on every load.
+
+Until you deploy the Worker, the dashboards fall back to a bundled snapshot and clearly label it as such.
 
 ## Live demo files
 
@@ -13,11 +26,32 @@ Each dashboard is a **single self-contained HTML file**. No build step, no serve
 | [`docs/neo-mining-scatter.html`](docs/neo-mining-scatter.html) | Candidate cards, full sortable table, and an accessibility-vs-composition bubble scatter plot |
 | [`docs/neo-mining-radar-breakdown.html`](docs/neo-mining-radar-breakdown.html) | Candidate cards, full table, per-object radar profile, and stacked mining-score breakdown |
 
-## Quick start
+## Setup (one time, ~2 minutes, free)
 
-1. Clone or download this repo
-2. Open any file in `docs/` directly in a browser — double-click, or `open docs/neo-mining-scatter.html` (macOS) / `start docs\neo-mining-scatter.html` (Windows)
-3. That's it — each file fetches live NASA data on load
+**1. Deploy the CORS proxy Worker.**
+```bash
+npm install -g wrangler          # if you don't have it
+cd worker
+wrangler login                   # opens browser, free Cloudflare account
+wrangler deploy                  # prints your Worker URL
+```
+Cloudflare prints a URL like `https://jpl-proxy.YOURNAME.workers.dev`.
+(You can also paste `worker/jpl-proxy.js` into the Cloudflare dashboard's Worker editor instead of using the CLI.)
+
+**2. Point the dashboards at your Worker.**
+Edit `docs/neo-config.js` and set:
+```js
+window.PROXY_BASE = "https://jpl-proxy.YOURNAME.workers.dev";
+```
+Also confirm your GitHub Pages origin is in the Worker's `ALLOWED_ORIGINS` list (it's pre-filled with `https://asdfghjkl724-blip.github.io`).
+
+**3. Commit and push.** GitHub Pages serves the updated files; every visitor now loads real JPL data.
+
+**Editing the object list.** The 50 designations live in `docs/neo-config.js` (`NEO_DESIGNATIONS`). Add or swap any valid SBDB designation, number, or name.
+
+## Quick start (before Worker setup)
+
+Open any file in `docs/` directly in a browser. Until the Worker URL is set, the dashboards show the bundled snapshot and label it clearly; once configured, they fetch live JPL data on load.
 
 ## Using your own NASA API key
 
@@ -54,8 +88,14 @@ Your own key gives you **1,000 requests/day**.
 neo-mining-dashboard/
 ├── README.md
 ├── LICENSE
+├── worker/
+│   ├── jpl-proxy.js          # Cloudflare Worker: CORS proxy for JPL APIs
+│   └── wrangler.toml         # one-command deploy config
 └── docs/
     ├── index.html
+    ├── neo-config.js         # ← set PROXY_BASE + the 50 designations here
+    ├── neo-data.js           # live JPL loader (real → normalized schema)
+    ├── neo-data-snapshot.js  # fallback snapshot (labeled) until Worker is set
     ├── neo100-live-dashboard.html
     ├── neo-mining-scatter.html
     └── neo-mining-radar-breakdown.html
