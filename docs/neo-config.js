@@ -8,7 +8,7 @@
 // ── Your deployed Cloudflare Worker URL (no trailing slash) ────────────────
 // Example: "https://jpl-proxy.aiden.workers.dev"
 // Until you set this, dashboards fall back to the bundled snapshot (neo-data-snapshot.js).
-window.PROXY_BASE = "https://jpl-proxy.CHANGE-ME.workers.dev";
+window.PROXY_BASE = "https://jpl-proxy.neo-mining.workers.dev";
 
 // ── 50 real near-Earth objects (SBDB designations) ────────────────────────
 // Variety across orbit classes (Aten/Apollo/Amor/Atira) and spectral types,

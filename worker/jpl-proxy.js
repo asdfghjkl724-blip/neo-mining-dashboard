@@ -76,7 +76,9 @@ export default {
 
     try {
       const jpl = await fetch(target, {
-        headers: { "User-Agent": "neo-mining-dashboard/1.0 (cloudflare-worker)" },
+        method: "GET",
+        redirect: "follow",
+        headers: { "Accept": "application/json" },
       });
 
       const body = await jpl.text();

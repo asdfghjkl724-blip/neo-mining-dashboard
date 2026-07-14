@@ -239,7 +239,7 @@ async function __bootData(){
       if(banner){ banner.textContent = 'Showing bundled snapshot (synthetic). Set the Worker proxy URL in neo-config.js for real JPL data.'; banner.className='src-snapshot'; }
     }
   }catch(e){
-    if(banner){ banner.textContent = 'Live fetch unavailable ('+e.message+') — showing bundled snapshot.'; banner.className='src-snapshot'; }
+    if(banner){ banner.textContent = (BASE_DATA && BASE_DATA.length) ? 'Live fetch unavailable ('+e.message+') — showing cached snapshot.' : 'Live JPL data unavailable ('+e.message+'). Check the Worker proxy — no data to display.'; banner.className='src-snapshot'; }
   }
 }
 
