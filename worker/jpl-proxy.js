@@ -77,8 +77,6 @@ export default {
     try {
       const jpl = await fetch(target, {
         headers: { "User-Agent": "neo-mining-dashboard/1.0 (cloudflare-worker)" },
-        // Cache identical requests at the edge for 6 hours to spare the API.
-        cf: { cacheTtl: 21600, cacheEverything: true },
       });
 
       const body = await jpl.text();
@@ -91,7 +89,11 @@ export default {
         },
       });
     } catch (err) {
-      return new Response(JSON.stringify({ error: "Upstream fetch failed", detail: String(err) }), {
+      return new Response(JSON.stringify({
+        error: "Upstream fetch failed",
+        target: target,
+        detail: String(err && err.message ? err.message : err),
+      }), {
         status: 502,
         headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
       });
