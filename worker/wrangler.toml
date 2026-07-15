@@ -1,0 +1,8 @@
+name = "jpl-proxy"
+main = "jpl-proxy.js"
+compatibility_date = "2025-01-01"
+
+# Deploy with:  cd worker && wrangler deploy
+# After deploy, Cloudflare prints your URL, e.g.
+#   https://jpl-proxy.YOURNAME.workers.dev
+# Put that into PROXY_BASE in docs/neo-config.js

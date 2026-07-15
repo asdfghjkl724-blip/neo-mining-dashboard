@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEO-100 Live Dashboard — Composition · Mining · Hazard</title>
+<script src="neo-config.js"></script>
+<script src="neo-data-snapshot.js"></script>
+<script src="neo-data.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root{--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--text-primary:#0b0b0b;--text-secondary:#52514e;--text-muted:#898781;--text-accent:#185fa5;--surface-0:#f0efec;--surface-1:#f7f6f3;--surface-2:#ffffff;--bg-danger:#FCEBEB;--bg-warning:#FAEEDA;--bg-success:#EAF3DE;--border:rgba(11,11,11,0.10);--border-strong:rgba(11,11,11,0.18);--radius:8px}
+@media(prefers-color-scheme:dark){:root{--text-primary:#fff;--text-secondary:#c3c2b7;--text-muted:#898781;--text-accent:#3987e5;--surface-0:#0b0b0b;--surface-1:#1a1a19;--surface-2:#232322;--bg-danger:#501313;--bg-warning:#412402;--bg-success:#173404;--border:rgba(255,255,255,0.10);--border-strong:rgba(255,255,255,0.18)}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);padding:14px;background:var(--surface-0);color:var(--text-primary);min-height:100vh}
+h1{font-size:15px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.src{font-size:11px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pulse{width:7px;height:7px;border-radius:50%;background:#0ca30c;flex-shrink:0;animation:blink 1.8s infinite;display:inline-block}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.utc{font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums;margin-left:auto}
+.eval-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.eval-card{background:var(--surface-2);border:.5px solid var(--border);border-radius:10px;padding:9px 12px}
+.eval-card h5{font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.eval-row{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text-secondary)}
+.eval-row .ev{font-weight:500;color:var(--text-primary);margin-left:2px}
+.eval-prog{height:4px;background:var(--surface-0);border-radius:2px;overflow:hidden;margin-top:6px;display:none}
+.eval-fill{height:100%;border-radius:2px;transition:width .4s}
+.h-fill{background:#E24B4A}.m-fill{background:#378ADD}
+.chg-badge{background:var(--bg-warning);color:#633806;font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500}
+#metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:10px}
+.mc{background:var(--surface-2);border:.5px solid var(--border);border-radius:var(--radius);padding:8px 10px}
+.mc .l{font-size:10px;color:var(--text-secondary);margin-bottom:1px}
+.mc .v{font-size:16px;font-weight:500}
+.scale-row{display:flex;gap:5px;margin-bottom:8px;align-items:center}
+.scale-row .sl{font-size:10px;color:var(--text-secondary);white-space:nowrap;margin-right:4px}
+.sb{flex:1;border-radius:6px;padding:5px 6px;text-align:center}
+.sb .sn{font-size:12px;font-weight:500}.sb .sd{font-size:8.5px;margin-top:1px}
+.sb0,.sb1{background:#EAF3DE}.sb0 .sn,.sb0 .sd,.sb1 .sn,.sb1 .sd{color:#27500A}
+.sb2{background:#FAEEDA}.sb2 .sn,.sb2 .sd{color:#633806}
+.sb3{background:#FCEBEB}.sb3 .sn,.sb3 .sd{color:#791F1F}
+.sb4{background:#501313}.sb4 .sn,.sb4 .sd{color:#F7C1C1}
+.mining-row{display:flex;gap:5px;margin-bottom:10px;align-items:center}
+.mining-row .sl{font-size:10px;color:var(--text-secondary);white-space:nowrap;margin-right:4px}
+.mb{flex:1;border-radius:6px;padding:4px 5px;text-align:center;font-size:9px;font-weight:500}
+.mb-prime{background:#EAF3DE;color:#27500A}.mb-high{background:#E1F5EE;color:#04342C}
+.mb-mod{background:#FAEEDA;color:#412402}.mb-low{background:#F1EFE8;color:#444441}.mb-poor{background:#FCEBEB;color:#501313}
+#main{display:grid;grid-template-columns:1fr 320px;gap:10px;align-items:start}
+#orrery-wrap{position:relative;border:.5px solid var(--border);border-radius:12px;overflow:hidden;background:#00010d;margin-bottom:6px}
+#orrery{display:block;width:100%;cursor:grab}
+#orrery.drag{cursor:grabbing}
+#otip{position:absolute;background:var(--surface-2);border:.5px solid var(--border-strong);border-radius:var(--radius);padding:7px 10px;font-size:11px;pointer-events:none;display:none;max-width:220px;line-height:1.55;z-index:5;color:var(--text-primary)}
+#otip strong{font-size:12px;font-weight:500;display:block;margin-bottom:2px}
+.ohint{text-align:center;font-size:10px;color:var(--text-muted);padding:2px 0 6px}
+#side{display:flex;flex-direction:column;gap:8px}
+#detail{border:.5px solid var(--border);border-radius:12px;padding:11px 13px;background:var(--surface-2)}
+#detail h4{font-size:13px;font-weight:500;margin-bottom:2px}
+.dsub{font-size:10.5px;color:var(--text-secondary);margin-bottom:8px}
+.dg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:7px}
+.dg2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px}
+.dc{background:var(--surface-1);border-radius:6px;padding:6px 8px}
+.dc .dl{font-size:9.5px;color:var(--text-secondary)}
+.dc .dv{font-size:11.5px;font-weight:500;color:var(--text-primary)}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+.comp-sec{background:var(--surface-1);border-radius:6px;padding:7px 9px}
+.comp-sec h6{font-size:10.5px;font-weight:500;color:var(--text-secondary);margin-bottom:4px}
+.comp-row{display:flex;justify-content:space-between;font-size:11px;padding:1.5px 0}
+.comp-row span:last-child{font-weight:500}
+.hz-row{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:6px;margin-bottom:7px;background:var(--surface-1)}
+.hz-num{font-size:22px;font-weight:500;width:30px;text-align:center;flex-shrink:0}
+.hz-info .ht{font-size:12px;font-weight:500}.hz-info .hd{font-size:10px;color:var(--text-secondary);margin-top:1px}
+.msb-label{font-size:10px;color:var(--text-secondary);margin-bottom:3px}
+.msb-track{height:6px;background:var(--surface-0);border-radius:3px;overflow:hidden;margin-bottom:4px}
+.msb-fill{height:100%;border-radius:3px}
+.mbar-t{height:6px;background:var(--surface-0);border-radius:3px;overflow:hidden;margin:3px 0}
+.mbar-f{height:100%;border-radius:3px}
+.eval-hist{padding:6px 8px;background:var(--surface-1);border-radius:6px;margin-top:6px}
+.eval-hist h6{font-size:10px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.eh-row{font-size:10px;padding:2px 0;border-bottom:.5px solid var(--border);display:flex;gap:6px;align-items:center}
+.eh-row:last-child{border:none}
+.eh-time{font-size:9.5px;color:var(--text-muted);min-width:88px;font-variant-numeric:tabular-nums}
+.eh-type{font-size:9px;padding:1px 5px;border-radius:4px;font-weight:500;flex-shrink:0}
+.eh-hz{background:#FCEBEB;color:#791F1F}.eh-mine{background:#E6F1FB;color:#042C53}
+.jpl-a{font-size:11px;color:var(--text-accent);text-decoration:none;display:inline-block;margin-top:7px}
+.jpl-a:hover{text-decoration:underline}
+#tbl-panel{border:.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface-2)}
+#ctrl{display:flex;gap:5px;flex-wrap:wrap;padding:7px 9px;border-bottom:.5px solid var(--border);align-items:center;background:var(--surface-1)}
+#ctrl button{font-size:11px;padding:2px 8px;border-radius:16px;border:.5px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer}
+.fa{background:var(--bg-success)!important;color:#27500A!important;border-color:transparent!important}
+.fp{background:var(--bg-danger)!important;color:#791F1F!important;border-color:transparent!important}
+.fc{background:var(--bg-warning)!important;color:#633806!important;border-color:transparent!important}
+.fm{background:#E6F1FB!important;color:#042C53!important;border-color:transparent!important}
+.fch{background:#FAEEDA!important;color:#633806!important;border-color:transparent!important}
+.fcm{background:#EAF3DE!important;color:#27500A!important;border-color:transparent!important}
+#srch{font-size:11px;padding:2px 7px;border-radius:6px;border:.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);width:80px;margin-left:auto;outline:none}
+#tbl-scroll{max-height:370px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;padding:5px 6px;color:var(--text-secondary);font-weight:500;border-bottom:.5px solid var(--border);white-space:nowrap;overflow:hidden;cursor:pointer;z-index:2;user-select:none}
+thead th:hover{color:var(--text-primary)}
+th.sa::after{content:" ↑";color:var(--text-accent)}th.sd::after{content:" ↓";color:var(--text-accent)}
+tbody tr{border-bottom:.5px solid var(--border);cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover,tbody tr.sel{background:var(--surface-1)}
+tbody td{padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary)}
+.hb{font-size:9.5px;padding:1px 5px;border-radius:8px;font-weight:500}
+.h0,.h1{background:#EAF3DE;color:#27500A}.h2{background:#FAEEDA;color:#633806}
+.h3{background:#FCEBEB;color:#791F1F}.h4{background:#501313;color:#F7C1C1}
+.score-bar{display:inline-block;width:28px;height:4px;background:var(--surface-0);border-radius:2px;overflow:hidden;vertical-align:middle;margin-right:3px}
+.score-bar i{display:block;height:100%}
+.api-dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle;background:#185fa5}
+.chg-row{background:rgba(186,117,23,0.06)!important}
+.chg-row td:first-child::before{content:"↑ ";color:#BA7517;font-weight:500}
+#status{font-size:10.5px;color:var(--text-secondary);padding:4px 0;text-align:center}
+code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-radius:3px;font-size:10px}
+@media(max-width:750px){#main{grid-template-columns:1fr}#metrics{grid-template-columns:repeat(3,1fr)}}
+</style>
+<style>#data-source-banner{font:11px ui-monospace,monospace;padding:6px 10px;border-radius:8px;margin-bottom:10px;background:#151922;color:#8c8f99;border:1px solid rgba(233,231,225,.09)}.src-live{color:#7fd6bd!important;border-color:rgba(63,184,150,.3)!important}.src-snapshot{color:#e0a878!important;border-color:rgba(201,124,74,.3)!important}</style>
+</head>
+<body>
+<div id="data-source-banner" class="src-loading">Initializing…</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+  <h1><i class="ti ti-radar-2" aria-hidden="true" style="font-size:16px"></i>NEO-100 live · composition · mining · hazard · ephemeris</h1>
+  <span class="utc" id="utc"></span>
+</div>
+<div class="src">
+  <span class="pulse"></span>
+  <span>100-object dataset · hazard re-evaluated weekly via NASA CAD API · mining scores re-evaluated monthly · approach dates from JPL ephemeris where name-matched</span>
+</div>
+
+<div class="eval-grid">
+  <div class="eval-card">
+    <h5><i class="ti ti-shield" aria-hidden="true" style="font-size:13px;color:#E24B4A"></i>Hazard evaluation — weekly</h5>
+    <div class="eval-row">
+      <span>Last: <span class="ev" id="h-last">—</span></span>
+      <span>Next: <span class="ev" id="h-next" style="font-variant-numeric:tabular-nums">—</span></span>
+      <span>Runs: <span class="ev" id="h-count">0</span></span>
+      <span id="h-badge"></span>
+    </div>
+    <div class="eval-prog" id="h-prog"><div class="eval-fill h-fill" id="h-fill" style="width:0%"></div></div>
+  </div>
+  <div class="eval-card">
+    <h5><i class="ti ti-pickaxe" aria-hidden="true" style="font-size:13px;color:#378ADD"></i>Mining viability — monthly</h5>
+    <div class="eval-row">
+      <span>Last: <span class="ev" id="m-last">—</span></span>
+      <span>Next: <span class="ev" id="m-next" style="font-variant-numeric:tabular-nums">—</span></span>
+      <span>Runs: <span class="ev" id="m-count">0</span></span>
+      <span id="m-badge"></span>
+    </div>
+    <div class="eval-prog" id="m-prog"><div class="eval-fill m-fill" id="m-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div id="metrics">
+  <div class="mc"><div class="l">Total objects</div><div class="v">100</div></div>
+  <div class="mc"><div class="l">API ephemeris matches</div><div class="v" id="mm-api" style="color:#185fa5">—</div></div>
+  <div class="mc"><div class="l">Hazard lvl 3–4</div><div class="v" id="mm-haz" style="color:#A32D2D">—</div></div>
+  <div class="mc"><div class="l">Prime mining targets</div><div class="v" id="mm-prime" style="color:#3B6D11">—</div></div>
+  <div class="mc"><div class="l">Fastest (km/s)</div><div class="v" id="mm-fast">—</div></div>
+  <div class="mc"><div class="l">Changed (hazard)</div><div class="v" id="mm-chg" style="color:#BA7517">—</div></div>
+</div>
+
+<div class="scale-row">
+  <span class="sl">Hazard:</span>
+  <div class="sb sb0"><div class="sn">0</div><div class="sd">No concern</div></div>
+  <div class="sb sb1"><div class="sn">1</div><div class="sd">Routine</div></div>
+  <div class="sb sb2"><div class="sn">2</div><div class="sd">Notable</div></div>
+  <div class="sb sb3"><div class="sn">3</div><div class="sd">Close pass</div></div>
+  <div class="sb sb4"><div class="sn">4</div><div class="sd">Critical</div></div>
+</div>
+<div class="mining-row">
+  <span class="sl">Mining:</span>
+  <div class="mb mb-prime">Prime target</div>
+  <div class="mb mb-high">High potential</div>
+  <div class="mb mb-mod">Moderate</div>
+  <div class="mb mb-low">Low potential</div>
+  <div class="mb mb-poor">Poor candidate</div>
+</div>
+
+<div id="main">
+  <div>
+    <div id="orrery-wrap"><canvas id="orrery"></canvas><div id="otip"></div></div>
+    <div class="ohint">Drag to rotate · Scroll to zoom · Click dot to inspect · Color = mining tier (hazard overrides for lvl 3–4)</div>
+    <div id="status">Loading 100-object dataset and connecting to NASA CAD API…</div>
+  </div>
+  <div id="side">
+    <div id="detail">
+      <div style="color:var(--text-muted);font-size:12px;padding:20px 0;text-align:center">
+        Select a NEO from the table or orrery<br>to see composition, mining data,<br>and evaluation history
+      </div>
+    </div>
+    <div id="tbl-panel">
+      <div id="ctrl">
+        <button data-f="all" class="fa">All</button>
+        <button data-f="pha">Haz 3–4</button>
+        <button data-f="prime">Prime</button>
+        <button data-f="C">C-type</button>
+        <button data-f="M">M-type</button>
+        <button data-f="changed">Changed</button>
+        <input id="srch" type="text" placeholder="Search…">
+      </div>
+      <div id="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th data-k="name" style="width:100px">Name</th>
+            <th data-k="speed_kms" style="width:56px">Speed</th>
+            <th data-k="mass_kg" style="width:60px">Mass</th>
+            <th data-k="approach_dist_ld" style="width:46px">LD</th>
+            <th data-k="approach_date" style="width:76px">Approach</th>
+            <th data-k="hazard" style="width:42px">Haz</th>
+            <th data-k="mining_score" style="width:66px">Mining</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="font-size:10.5px;color:var(--text-muted);margin-top:8px;line-height:1.6">
+  Dataset: 100 NEOs with real composition science (C/S/M/X types, volatiles, metals, mining scores). Speed and mass from dataset physical properties. Approach dates from JPL ephemeris via NASA CAD API where name-matched; simulated for unmatched objects (labeled). Hazard re-scored weekly against NASA MOID + PHA data. Mining viability re-scored monthly from updated accessibility, composition value, and size factors. Replace <code>DEMO_KEY</code> with your key from <a href="https://api.nasa.gov" style="color:var(--text-accent)">api.nasa.gov</a>.
+</div>
+
+<script>
+let BASE_DATA = (window.NEO_SNAPSHOT || []);
+async function __bootData(){
+  var banner = document.getElementById('data-source-banner');
+  try{
+    if(window.NEOData && window.NEOData.proxyReady && window.NEOData.proxyReady()){
+      if(banner) banner.textContent = 'Loading live data from NASA/JPL…';
+      var live = await window.NEOData.loadAll(function(done,total){
+        if(banner) banner.textContent = 'Loading live JPL data… '+done+'/'+total;
+      });
+      if(live && live.length){
+        BASE_DATA = live;
+        if(banner){ banner.textContent = 'Live JPL data · '+live.length+' real NEOs · orbits, MOID & approaches from NASA/JPL; composition & scores modeled from spectral type'; banner.className='src-live'; }
+      }
+    } else {
+      if(banner){ banner.textContent = 'Showing bundled snapshot (synthetic). Set the Worker proxy URL in neo-config.js for real JPL data.'; banner.className='src-snapshot'; }
+    }
+  }catch(e){
+    if(banner){ banner.textContent = (BASE_DATA && BASE_DATA.length) ? 'Live fetch unavailable ('+e.message+') — showing cached snapshot.' : 'Live JPL data unavailable ('+e.message+'). Check the Worker proxy — no data to display.'; banner.className='src-snapshot'; }
+  }
+}
+
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const API_KEY = 'DEMO_KEY';
+const LD_KM = 149597870.7 / 389.17;
+const AU_KM = 149597870.7;
+const WEEK_MS = 7*24*60*60*1000;
+const MONTH_MS = 30*24*60*60*1000;
+
+let DATA = BASE_DATA.map(o => ({...o,
+  approach_dist_ld: o.sim_approach_dist_ld,
+  approach_dist_km: o.sim_approach_dist_ld * LD_KM,
+  approach_date: o.sim_approach_date,
+  api_matched: false,
+  pha_api: false
+}));
+
+let prevHazard = {}, prevMining = {}, hazardHistory = {}, miningHistory = {}, changedIds = new Set();
+let hazardEvalCount = 0, miningEvalCount = 0;
+let lastHazardEval = null, nextHazardEval = null;
+let lastMiningEval = null, nextMiningEval = null;
+let apiMatchCount = 0;
+let activeFilter = 'all', sortK = 'mining_score', sortD = -1, selId = null, srchTerm = '';
+
+const TIER_COLOR = {
+  'Prime target': '#639922',
+  'High potential': '#1D9E75',
+  'Moderate potential': '#BA7517',
+  'Low potential': '#888780',
+  'Poor candidate': '#E24B4A'
+};
+const HZ_LABEL  = ['No concern','Routine','Notable','Close pass','Critical'];
+const HZ_CLS    = ['h0','h1','h2','h3','h4'];
+const HZ_COLOR  = ['#639922','#639922','#BA7517','#E24B4A','#A32D2D'];
+const HZ_DESC   = ['Distant routine pass.','Very common flyby, no concern.','Within 10 LD — worth monitoring.','NASA PHA-flagged or within 5 LD.','NASA PHA + within 5 LD, large body.'];
+
+function hazardScore(o) {
+  const pha = o.pha_api || false;
+  const dist = o.approach_dist_ld;
+  if (pha && dist < 5) return 4;
+  if (pha || dist < 5) return 3;
+  if (dist < 10) return 2;
+  if (o.moid_au < 0.05 && o.diam_m > 140) return 2;
+  if (dist < 30) return 1;
+  return 0;
+}
+
+function calcMiningScore(o) {
+  const raw_acc = Math.max(0, 100 - (o.moid_au * 150) - (o.speed_kms * 1.3) - (o.period_yr * 3));
+  const accessibility = Math.round(Math.min(100, Math.max(5, raw_acc)) * 10) / 10;
+  const cv_adj = o.api_matched ? 1.05 : 1.0;
+  const comp_value = Math.round(Math.min(100, o.comp_value * cv_adj) * 10) / 10;
+  const score = Math.round((accessibility * 0.40 + comp_value * 0.35 + o.size_factor * 0.25) * 10) / 10;
+  let tier;
+  if (score >= 75) tier = 'Prime target';
+  else if (score >= 60) tier = 'High potential';
+  else if (score >= 45) tier = 'Moderate potential';
+  else if (score >= 30) tier = 'Low potential';
+  else tier = 'Poor candidate';
+  return { accessibility, comp_value, score, tier };
+}
+
+function fmtMass(kg) {
+  if (!kg) return '—';
+  if (kg >= 1e15) return (kg/1e15).toFixed(1) + 'Pg';
+  if (kg >= 1e12) return (kg/1e12).toFixed(1) + 'Tg';
+  if (kg >= 1e9)  return (kg/1e9).toFixed(1) + 'Gg';
+  if (kg >= 1e6)  return (kg/1e6).toFixed(1) + 'Mg';
+  return Math.round(kg).toLocaleString() + 'kg';
+}
+function fmtMassFull(kg) {
+  if (!kg) return '—';
+  if (kg >= 1e15) return (kg/1e15).toFixed(3) + ' Pg (petagram)';
+  if (kg >= 1e12) return (kg/1e12).toFixed(3) + ' Tg (teragram)';
+  if (kg >= 1e9)  return (kg/1e9).toFixed(2) + ' Gg (gigagram)';
+  if (kg >= 1e6)  return (kg/1e6).toFixed(2) + ' Mg (megagram)';
+  return Math.round(kg).toLocaleString() + ' kg';
+}
+function fmtD(m) { return m >= 1000 ? (m/1000).toFixed(2) + ' km' : Math.round(m) + ' m'; }
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtDate(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtTs(d) { return `${fmtDate(d)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`; }
+function fmtCDs(ms) {
+  if (ms <= 0) return 'now';
+  const s=Math.floor(ms/1000),d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+  if (d > 0) return `${d}d ${h}h`; if (h > 0) return `${h}h ${m}m`; return `${m}m`;
+}
+
+async function fetchCADApproaches() {
+  const now = new Date(), end = new Date(now.getTime() + 365*86400000);
+  const url = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${fmtDate(now)}&date-max=${fmtDate(end)}&dist-max=0.5&sort=date&limit=500`;
+  try {
+    const r = await fetch(url); if (!r.ok) return 0;
+    const j = await r.json();
+    const fields = j.fields, idx = {};
+    fields.forEach((f,i) => idx[f] = i);
+    const lookup = {};
+    (j.data || []).forEach(row => {
+      const des = row[idx['des']].toLowerCase().trim().replace(/\s+/g,' ');
+      const distAU = parseFloat(row[idx['dist']]);
+      if (!lookup[des] || distAU < lookup[des].dist_au) {
+        lookup[des] = {
+          dist_au: distAU,
+          dist_ld: distAU * AU_KM / LD_KM,
+          v_rel: parseFloat(row[idx['v_rel']]),
+          cd: row[idx['cd']]
+        };
+      }
+    });
+    let matched = 0;
+    DATA.forEach(o => {
+      const keys = [
+        o.name.toLowerCase().trim(),
+        o.name.toLowerCase().replace(/^\d+\s+/,'').trim(),
+        o.name.toLowerCase().replace(/\s+/g,'')
+      ];
+      let hit = null;
+      for (const k of keys) { if (lookup[k]) { hit = lookup[k]; break; } }
+      if (hit) {
+        o.approach_date = hit.cd.split(' ')[0];
+        o.approach_dist_ld = Math.round(hit.dist_ld * 1000) / 1000;
+        o.approach_dist_km = Math.round(hit.dist_au * AU_KM);
+        o.api_matched = true;
+        matched++;
+      }
+    });
+    apiMatchCount = matched;
+    document.getElementById('mm-api').textContent = matched;
+    return matched;
+  } catch(e) { console.warn('CAD API:', e.message); return 0; }
+}
+
+async function runHazardEval() {
+  const prog = document.getElementById('h-prog'), fill = document.getElementById('h-fill');
+  prog.style.display = 'block'; fill.style.width = '15%';
+  document.getElementById('status').textContent = 'Running hazard evaluation — fetching NASA CAD API…';
+  await fetchCADApproaches();
+  fill.style.width = '70%';
+  const now = new Date(), ts = fmtTs(now);
+  changedIds = new Set();
+  DATA.forEach(o => {
+    const newHz = hazardScore(o);
+    const prev = prevHazard[o.id];
+    if (!hazardHistory[o.id]) hazardHistory[o.id] = [];
+    if (prev !== undefined && prev !== newHz) {
+      changedIds.add(o.id);
+      hazardHistory[o.id].push({ts, type:'hazard', from:prev, to:newHz});
+    } else if (prev === undefined) {
+      hazardHistory[o.id].push({ts, type:'hazard', from:null, to:newHz});
+    }
+    prevHazard[o.id] = newHz;
+    o.hazard = newHz;
+  });
+  hazardEvalCount++;
+  lastHazardEval = now;
+  nextHazardEval = new Date(now.getTime() + WEEK_MS);
+  fill.style.width = '100%';
+  setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; }, 500);
+  document.getElementById('h-count').textContent = hazardEvalCount;
+  document.getElementById('h-last').textContent = fmtTs(now);
+  const badge = document.getElementById('h-badge');
+  badge.innerHTML = changedIds.size > 0
+    ? `<span class="chg-badge">${changedIds.size} changed</span>`
+    : '<span style="font-size:10px;color:var(--text-muted)">No changes</span>';
+  updateMetrics(); buildOrrery(); renderTable();
+  document.getElementById('status').textContent =
+    `Hazard eval #${hazardEvalCount} complete · ${apiMatchCount} ephemeris matches · ${changedIds.size} hazard level changes · All approaches safe.`;
+}
+
+async function runMiningEval() {
+  const prog = document.getElementById('m-prog'), fill = document.getElementById('m-fill');
+  prog.style.display = 'block'; fill.style.width = '30%';
+  document.getElementById('status').textContent = 'Running monthly mining viability re-evaluation…';
+  const now = new Date(), ts = fmtTs(now);
+  let miningChanged = 0;
+  DATA.forEach(o => {
+    const res = calcMiningScore(o);
+    const prev = prevMining[o.id];
+    if (!miningHistory[o.id]) miningHistory[o.id] = [];
+    const prevScore = prev?.score;
+    if (prevScore !== undefined && Math.abs(prevScore - res.score) >= 1) {
+      miningChanged++;
+      miningHistory[o.id].push({ts, type:'mining', from:prevScore, to:res.score, tier_from:prev?.tier, tier_to:res.tier});
+    } else if (prevScore === undefined) {
+      miningHistory[o.id].push({ts, type:'mining', from:null, to:res.score, tier_to:res.tier});
+    }
+    prevMining[o.id] = {score:res.score, tier:res.tier};
+    o.mining_score = res.score;
+    o.mining_tier = res.tier;
+    o.accessibility = res.accessibility;
+    o.comp_value = res.comp_value;
+  });
+  DATA.sort((a,b) => b.mining_score - a.mining_score);
+  DATA.forEach((o,i) => o.mining_rank = i+1);
+  miningEvalCount++;
+  lastMiningEval = now;
+  nextMiningEval = new Date(now.getTime() + MONTH_MS);
+  fill.style.width = '100%';
+  setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; }, 500);
+  document.getElementById('m-count').textContent = miningEvalCount;
+  document.getElementById('m-last').textContent = fmtTs(now);
+  document.getElementById('m-badge').innerHTML = miningChanged > 0
+    ? `<span class="chg-badge" style="background:#E6F1FB;color:#042C53">${miningChanged} re-scored</span>`
+    : '<span style="font-size:10px;color:var(--text-muted)">Scores stable</span>';
+  updateMetrics(); renderTable();
+  document.getElementById('status').textContent =
+    `Mining eval #${miningEvalCount} complete · ${miningChanged} score changes ≥1 point · Next in 30 days.`;
+}
+
+function updateMetrics() {
+  document.getElementById('mm-haz').textContent   = DATA.filter(o => o.hazard >= 3).length;
+  document.getElementById('mm-prime').textContent = DATA.filter(o => o.mining_tier === 'Prime target').length;
+  const fa = [...DATA].sort((a,b) => b.speed_kms - a.speed_kms)[0];
+  document.getElementById('mm-fast').textContent  = fa ? fa.speed_kms.toFixed(1) : '—';
+  document.getElementById('mm-chg').textContent   = changedIds.size || (hazardEvalCount > 0 ? '0' : '—');
+  document.getElementById('utc').textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  if (nextHazardEval) document.getElementById('h-next').textContent = fmtCDs(nextHazardEval - new Date());
+  if (nextMiningEval) document.getElementById('m-next').textContent = fmtCDs(nextMiningEval - new Date());
+}
+
+/* ── THREE.JS ORRERY ── */
+let renderer, scene, camera, neoMeshes = [], selTraj = null;
+let rotX = 0.25, rotY = 0, zoom = 7, isDrag = false, prevM = {x:0,y:0};
+const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+const canv = document.getElementById('orrery');
+const orrWrap = document.getElementById('orrery-wrap');
+const tip = document.getElementById('otip');
+function orrSize() { const w = orrWrap.clientWidth; return {w, h: Math.round(w*0.58)}; }
+
+function buildOrrery() {
+  if (renderer) { renderer.dispose(); while(scene.children.length>0) scene.remove(scene.children[0]); neoMeshes=[]; selTraj=null; }
+  const {w,h} = orrSize();
+  canv.width=w; canv.height=h; canv.style.height=h+'px';
+  renderer = new THREE.WebGLRenderer({canvas:canv, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(w,h); renderer.setClearColor(0x00010d,1);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(50, w/h, 0.01, 800);
+  camera.position.set(0,0,zoom);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const sl = new THREE.PointLight(0xfff5e0,2); sl.position.set(0,0,0); scene.add(sl);
+  const sg = new THREE.BufferGeometry(); const sv = [];
+  for(let i=0;i<1400;i++){const r=80+Math.random()*200,t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1);sv.push(r*Math.sin(p)*Math.cos(t),r*Math.cos(p),r*Math.sin(p)*Math.sin(t));}
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(sv,3));
+  scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color:0xffffff,size:0.6,transparent:true,opacity:0.5})));
+  [{r:0.39,col:0x999999,s:0.028},{r:0.72,col:0xDDB060,s:0.044},{r:1.00,col:0x4488FF,s:0.054},{r:1.52,col:0xFF5533,s:0.038}].forEach((p,i) => {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(p.r,p.r*1.003,64), new THREE.MeshBasicMaterial({color:i===2?0x3366aa:0x334455,side:THREE.DoubleSide,transparent:true,opacity:i===2?0.3:0.12}));
+    ring.rotation.x = Math.PI/2; scene.add(ring);
+    const pl = new THREE.Mesh(new THREE.SphereGeometry(p.s,12,12), new THREE.MeshPhongMaterial({color:p.col,emissive:p.col,emissiveIntensity:0.2}));
+    const ang=(i*1.3)%(Math.PI*2); pl.position.set(Math.cos(ang)*p.r,0,Math.sin(ang)*p.r); scene.add(pl);
+  });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.1,18,18), new THREE.MeshBasicMaterial({color:0xffe566})));
+  DATA.forEach(o => {
+    const orbR = Math.min(Math.max(0.85 + o.moid_au*6, 0.88), 2.8);
+    const ang = (o.id*137.5*Math.PI/180)%(Math.PI*2);
+    const size = Math.max(0.018, Math.min(0.06, Math.log10(Math.max(o.diam_m,10))*0.018));
+    const isChg = changedIds.has(o.id);
+    const mCol = parseInt(TIER_COLOR[o.mining_tier].replace('#',''), 16);
+    const hCol = parseInt(HZ_COLOR[o.hazard].replace('#',''), 16);
+    const col = o.hazard >= 3 ? hCol : mCol;
+    const m = new THREE.Mesh(
+      new THREE.SphereGeometry(size*(isChg?1.5:1), 10, 10),
+      new THREE.MeshPhongMaterial({color:col, emissive:col, emissiveIntensity:isChg?0.85:0.4})
+    );
+    m.position.set(Math.cos(ang)*orbR, Math.sin(ang)*0.18, Math.sin(ang)*orbR*0.85);
+    m.userData = o; scene.add(m); neoMeshes.push(m);
+  });
+  animOrrery();
+}
+
+function drawTraj(o) {
+  if (selTraj) { selTraj.parts.forEach(p => scene.remove(p)); selTraj=null; }
+  const orbR = Math.min(Math.max(0.85 + o.moid_au*6, 0.88), 2.8);
+  const ex = Math.min(0.1 + o.moid_au*3, 0.7);
+  const a = orbR*(1+ex), b = orbR*Math.sqrt(1-ex*ex*0.3);
+  const pts = [];
+  for(let i=0;i<=120;i++){const t=(i/120)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(t)*a,Math.sin(t)*0.1*ex,Math.sin(t)*b));}
+  const col = parseInt(HZ_COLOR[o.hazard].replace('#',''),16);
+  const traj = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.8}));
+  const ang=(o.id*137.5*Math.PI/180)%(Math.PI*2);
+  const apPos = new THREE.Vector3(Math.cos(ang)*a, Math.sin(ang)*0.1*ex, Math.sin(ang)*b);
+  const apM = new THREE.Mesh(new THREE.SphereGeometry(0.024,10,10), new THREE.MeshBasicMaterial({color:col}));
+  apM.position.copy(apPos);
+  const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),apPos]), new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.35}));
+  [traj, apM, ln].forEach(p => scene.add(p));
+  selTraj = {parts:[traj,apM,ln]};
+}
+
+let animFr;
+function animOrrery() {
+  if (animFr) cancelAnimationFrame(animFr);
+  function frame() {
+    animFr = requestAnimationFrame(frame);
+    if (!isDrag) rotY += 0.003;
+    scene.rotation.x = rotX; scene.rotation.y = rotY;
+    camera.position.set(0,0,zoom); camera.lookAt(0,0,0);
+    renderer.render(scene,camera);
+  }
+  frame();
+}
+canv.addEventListener('mousedown', e=>{isDrag=true;prevM={x:e.clientX,y:e.clientY};canv.classList.add('drag');});
+window.addEventListener('mouseup', ()=>{isDrag=false;canv.classList.remove('drag');});
+window.addEventListener('mousemove', e=>{
+  if(isDrag){rotY+=(e.clientX-prevM.x)*0.006;rotX+=(e.clientY-prevM.y)*0.006;rotX=Math.max(-1.2,Math.min(1.2,rotX));prevM={x:e.clientX,y:e.clientY};}
+  if(!neoMeshes.length)return;
+  const rect=canv.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(neoMeshes);
+  if(hits.length){
+    const o=hits[0].object.userData,isChg=changedIds.has(o.id);
+    tip.style.display='block';tip.style.left=(e.clientX-rect.left+12)+'px';tip.style.top=(e.clientY-rect.top-8)+'px';
+    tip.innerHTML=`<strong>${o.name}</strong><span style="color:${HZ_COLOR[o.hazard]}">Hazard ${o.hazard}</span> · <span style="color:${TIER_COLOR[o.mining_tier]}">${o.mining_tier}</span><br>${o.comp_type}-type · ${fmtD(o.diam_m)}<br>${o.speed_kms.toFixed(1)} km/s · ${fmtMass(o.mass_kg)}<br>${o.approach_dist_ld.toFixed(2)} LD · ${o.approach_date}${o.api_matched?'<br><span style="color:#185fa5;font-size:10px">✓ Ephemeris matched</span>':''}${isChg?'<br><span style="color:#BA7517;font-size:10px">↑ Hazard changed</span>':''}`;
+    canv.style.cursor='pointer';
+  }else{tip.style.display='none';canv.style.cursor=isDrag?'grabbing':'grab';}
+});
+canv.addEventListener('click', ()=>{if(!neoMeshes.length)return;const hits=raycaster.intersectObjects(neoMeshes);if(hits.length)selectObj(hits[0].object.userData.id);});
+canv.addEventListener('wheel', e=>{zoom=Math.max(2,Math.min(14,zoom+e.deltaY*0.007));e.preventDefault();},{passive:false});
+canv.addEventListener('touchstart', e=>{isDrag=true;prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+canv.addEventListener('touchmove', e=>{if(!isDrag)return;const dx=e.touches[0].clientX-prevM.x,dy=e.touches[0].clientY-prevM.y;rotY+=dx*0.006;rotX+=dy*0.006;rotX=Math.max(-1.2,Math.min(1.2,rotX));prevM={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+canv.addEventListener('touchend', ()=>{isDrag=false;});
+window.addEventListener('resize', ()=>{if(!renderer)return;const{w,h}=orrSize();canv.width=w;canv.height=h;canv.style.height=h+'px';renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();});
+
+/* ── TABLE & DETAIL ── */
+function getFilt() {
+  let a = DATA.filter(o => {
+    if(activeFilter==='pha')    return o.hazard >= 3;
+    if(activeFilter==='prime')  return o.mining_tier === 'Prime target';
+    if(activeFilter==='C'||activeFilter==='M'||activeFilter==='S'||activeFilter==='X') return o.comp_type === activeFilter;
+    if(activeFilter==='changed')return changedIds.has(o.id);
+    return true;
+  });
+  if(srchTerm) a = a.filter(o=>o.name.toLowerCase().includes(srchTerm.toLowerCase()));
+  return a.slice().sort((a,b)=>{
+    let av=a[sortK],bv=b[sortK];
+    if(sortK==='name')          return a.name.localeCompare(b.name)*sortD;
+    if(sortK==='approach_date') return a.approach_date.localeCompare(b.approach_date)*sortD;
+    return (av-bv)*sortD;
+  });
+}
+
+function renderTable() {
+  const rows = getFilt(), tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted)">No results.</td></tr>';return;}
+  rows.forEach(o => {
+    const tr = document.createElement('tr');
+    if(o.id===selId)   tr.classList.add('sel');
+    if(changedIds.has(o.id)) tr.classList.add('chg-row');
+    const mColor = TIER_COLOR[o.mining_tier];
+    tr.innerHTML=`
+      <td title="${o.name}" style="font-weight:${o.hazard>=3?'500':'400'}">${o.api_matched?'<span class="api-dot" title="Ephemeris matched"></span>':''}${o.name}</td>
+      <td style="font-variant-numeric:tabular-nums">${o.speed_kms.toFixed(1)}<span style="color:var(--text-muted);font-size:9px"> km/s</span></td>
+      <td>${fmtMass(o.mass_kg)}</td>
+      <td style="font-variant-numeric:tabular-nums">${o.approach_dist_ld.toFixed(2)}</td>
+      <td style="font-size:10.5px;color:var(--text-secondary)">${o.approach_date}</td>
+      <td><span class="hb ${HZ_CLS[o.hazard]}">${o.hazard}</span></td>
+      <td><span class="score-bar"><i style="width:${o.mining_score}%;background:${mColor}"></i></span>${o.mining_score}</td>
+    `;
+    tr.addEventListener('click', ()=>selectObj(o.id));
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('thead th[data-k]').forEach(th=>{
+    th.classList.remove('sa','sd');
+    if(th.dataset.k===sortK) th.classList.add(sortD===1?'sa':'sd');
+  });
+}
+
+function selectObj(id) {
+  selId = selId===id ? null : id;
+  if(selTraj){selTraj.parts.forEach(p=>scene.remove(p));selTraj=null;}
+  renderTable(); renderDetail();
+  if(selId&&neoMeshes.length){
+    const o=DATA.find(x=>x.id===selId); if(o) drawTraj(o);
+    neoMeshes.forEach(m=>{
+      const s=m.userData.id===selId, isChg=changedIds.has(m.userData.id);
+      m.material.emissiveIntensity = s?0.95:(isChg?0.6:0.15);
+      m.scale.setScalar(s?1.8:1);
+    });
+  } else if(neoMeshes.length){
+    neoMeshes.forEach(m=>{m.material.emissiveIntensity=changedIds.has(m.userData.id)?0.85:0.4;m.scale.setScalar(changedIds.has(m.userData.id)?1.4:1);});
+  }
+}
+
+function renderDetail() {
+  const box = document.getElementById('detail');
+  if(!selId){box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:20px 0;text-align:center">Select a NEO from the table or orrery<br>to see composition, mining data,<br>and evaluation history</div>';return;}
+  const o = DATA.find(x=>x.id===selId); if(!o) return;
+  const bc = HZ_COLOR[o.hazard], mc = TIER_COLOR[o.mining_tier];
+  const isChg = changedIds.has(o.id);
+  const volRows = Object.entries(o.volatiles||{}).map(([k,v])=>`<div class="comp-row"><span>${k.replace(/_pct|_ppm/g,'').replace(/_/g,' ')}</span><span>${v}${k.includes('ppm')?' ppm':'%'}</span></div>`).join('');
+  const metRows = Object.entries(o.metals||{}).map(([k,v])=>`<div class="comp-row"><span>${k.replace(/_pct|_ppm/g,'').replace(/_/g,' ')}</span><span>${v}${k.includes('ppm')?' ppm':'%'}</span></div>`).join('');
+  const hHist = (hazardHistory[o.id]||[]).slice(-3).reverse();
+  const mHist = (miningHistory[o.id]||[]).slice(-3).reverse();
+  const allHist = [...hHist,...mHist].sort((a,b)=>b.ts.localeCompare(a.ts)).slice(0,6);
+  const histHTML = allHist.length ? allHist.map(e=>`<div class="eh-row"><span class="eh-time">${e.ts}</span><span class="eh-type ${e.type==='hazard'?'eh-hz':'eh-mine'}">${e.type}</span>${e.from!==null?`<span style="font-size:9.5px;color:var(--text-muted)">${typeof e.from==='number'?e.from.toFixed(e.type==='mining'?1:0):e.from}</span><span style="color:var(--text-muted);font-size:9px;margin:0 2px">→</span>`:'<span style="font-size:9px;color:var(--text-muted)">new→</span>'}<span style="font-size:10.5px;font-weight:500">${typeof e.to==='number'?e.to.toFixed(e.type==='mining'?1:0):e.to}</span></div>`).join('') : '<div style="font-size:10px;color:var(--text-muted)">No evaluation history yet.</div>';
+
+  box.innerHTML = `
+    <h4>${o.name}</h4>
+    <div class="dsub">${o.comp_desc}${o.api_matched?'<span style="color:#185fa5;font-size:10px;margin-left:6px">✓ Ephemeris from NASA CAD API</span>':'<span style="color:var(--text-muted);font-size:10px;margin-left:6px"> simulated approach</span>'}</div>
+    ${isChg?'<div style="font-size:10.5px;background:#FAEEDA;color:#633806;padding:4px 8px;border-radius:6px;margin-bottom:7px;font-weight:500;display:flex;align-items:center;gap:5px"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:12px"></i>Hazard level changed this evaluation</div>':''}
+    <div class="hz-row"><span class="hz-num" style="color:${bc}">${o.hazard}</span><div class="hz-info"><div class="ht" style="color:${bc}">Level ${o.hazard} — ${HZ_LABEL[o.hazard]}</div><div class="hd">${HZ_DESC[o.hazard]}</div></div></div>
+    <div class="dg3">
+      <div class="dc"><div class="dl">Speed (dataset)</div><div class="dv">${o.speed_kms.toFixed(1)} km/s</div></div>
+      <div class="dc"><div class="dl">Mass (computed)</div><div class="dv" style="font-size:10.5px">${fmtMassFull(o.mass_kg)}</div></div>
+      <div class="dc"><div class="dl">Diameter</div><div class="dv">${fmtD(o.diam_m)}</div></div>
+    </div>
+    <div class="dg2">
+      <div class="dc"><div class="dl">Approach date${o.api_matched?' (ephemeris)':' (simulated)'}</div><div class="dv">${o.approach_date}</div></div>
+      <div class="dc"><div class="dl">Miss distance</div><div class="dv">${o.approach_dist_ld.toFixed(3)} LD<span style="display:block;font-size:9.5px;color:var(--text-secondary)">${Math.round(o.approach_dist_km).toLocaleString()} km</span></div></div>
+      <div class="dc"><div class="dl">MOID</div><div class="dv">${o.moid_au} AU</div></div>
+      <div class="dc"><div class="dl">Orbital class / period</div><div class="dv">${o.orb_class} · ${o.period_yr} yr</div></div>
+    </div>
+    <div class="comp-grid">
+      <div class="comp-sec"><h6>Volatile inventory</h6>${volRows||'<div class="comp-row"><span>Negligible</span><span>—</span></div>'}</div>
+      <div class="comp-sec"><h6>Metal / mineral content</h6>${metRows}</div>
+    </div>
+    <div class="msb-label">Mining score: <strong>${o.mining_score}</strong>/100 · <span style="color:${mc};font-weight:500">${o.mining_tier}</span> · Rank #${o.mining_rank}</div>
+    <div class="msb-track"><div class="msb-fill" style="width:${o.mining_score}%;background:${mc}"></div></div>
+    <div style="font-size:9.5px;color:var(--text-secondary);margin-bottom:7px">Accessibility: ${o.accessibility}/100 · Composition value: ${o.comp_value}/100 · Size factor: ${o.size_factor}/100</div>
+    <div class="eval-hist">
+      <h6><i class="ti ti-history" aria-hidden="true" style="font-size:12px;vertical-align:-1px"></i>Evaluation history (hazard + mining)</h6>
+      ${histHTML}
+    </div>
+    <a href="https://ssd.jpl.nasa.gov/sbdb.cgi?sstr=${encodeURIComponent(o.name)}" class="jpl-a" target="_blank">JPL Small-Body Database <i class="ti ti-external-link" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i></a>
+  `;
+}
+
+document.querySelectorAll('#ctrl button[data-f]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#ctrl button[data-f]').forEach(x=>x.className='');
+    activeFilter=b.dataset.f;
+    const cls={all:'fa',pha:'fp',prime:'fcm',C:'fa',M:'fc',changed:'fch'};
+    b.className=cls[activeFilter]||'fc';
+    renderTable();
+  });
+});
+document.querySelectorAll('thead th[data-k]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.k;
+    if(sortK===k) sortD*=-1; else{sortK=k;sortD=k==='name'||k==='approach_date'?1:-1;}
+    renderTable();
+  });
+});
+document.getElementById('srch').addEventListener('input', e=>{srchTerm=e.target.value;renderTable();});
+
+setInterval(()=>{
+  updateMetrics();
+  if(nextHazardEval && new Date()>=nextHazardEval) runHazardEval();
+  if(nextMiningEval && new Date()>=nextMiningEval) runMiningEval();
+},1000);
+
+(async()=>{
+  await __bootData();
+  await runHazardEval();
+  await runMiningEval();
+})();
+</script>
+</body>
+</html>

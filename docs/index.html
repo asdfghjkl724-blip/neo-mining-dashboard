@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEO Dataset · Near-Earth Object Prospecting</title>
+<meta name="description" content="Live dashboards over 50 real near-Earth objects — composition, accessibility, and mining viability, built on real NASA/JPL orbital data.">
+<script src="neo-config.js"></script>
+<script src="neo-data-snapshot.js"></script>
+<script src="neo-data.js"></script>
+<style>
+:root{
+  --bg:#0a0c10;--panel:#12151b;--panel-hover:#171b23;
+  --border:rgba(233,231,225,0.09);--border-strong:rgba(233,231,225,0.16);
+  --text:#e9e7e1;--text-dim:#8c8f99;--text-faint:#5b5e68;
+  --copper:#c97c4a;
+  --c-type:#3fb896;--s-type:#9b9a92;--m-type:#d69a4a;--x-type:#9b8fd6;
+  --mono: ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Consolas,monospace;
+  --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg)}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--copper);outline-offset:3px}
+.wrap{max-width:920px;margin:0 auto;padding:56px 24px 56px}
+
+#data-source-banner{font:11px var(--mono);padding:7px 11px;border-radius:8px;margin-bottom:26px;background:var(--panel);color:var(--text-dim);border:1px solid var(--border);display:flex;align-items:center;gap:8px}
+#data-source-banner::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--text-faint);flex-shrink:0}
+#data-source-banner.src-live{color:#7fd6bd;border-color:rgba(63,184,150,.3)}
+#data-source-banner.src-live::before{background:#3fb896;animation:pulse 2.4s infinite}
+#data-source-banner.src-snapshot{color:#e0a878;border-color:rgba(201,124,74,.3)}
+#data-source-banner.src-snapshot::before{background:#c97c4a}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,184,150,.5)}70%{box-shadow:0 0 0 5px rgba(63,184,150,0)}100%{box-shadow:0 0 0 0 rgba(63,184,150,0)}}
+
+header{margin-bottom:44px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--copper);display:flex;align-items:center;gap:8px;margin-bottom:18px}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--copper);flex-shrink:0}
+h1{font-size:clamp(32px,5vw,46px);font-weight:700;letter-spacing:-.02em;line-height:1.08;margin-bottom:16px;max-width:15ch}
+header p{font-size:16px;color:var(--text-dim);max-width:54ch;line-height:1.65}
+header p strong{color:var(--text);font-weight:500}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:36px 0 8px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat .v{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1;margin-bottom:5px}
+.stat .l{font-size:11.5px;color:var(--text-dim)}
+.stat.prime .v{color:#7fd6bd}
+.stat.haz .v{color:#e0a878}
+@media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+.spectrum{margin:32px 0 8px}
+.spectrum-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.spectrum-label span:first-child{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint)}
+.spectrum-label span:last-child{font-family:var(--mono);font-size:11px;color:var(--text-faint)}
+.spectrum-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;border:1px solid var(--border-strong);background:var(--panel)}
+.spectrum-bar div{height:100%;transition:width .5s}
+.spectrum-key{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--text-dim)}
+.spectrum-key span{display:flex;align-items:center;gap:7px}
+.spectrum-key i{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.top{margin:40px 0 8px}
+.top h3{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:14px}
+.top ol{list-style:none;counter-reset:t}
+.top li{counter-increment:t;display:grid;grid-template-columns:26px 1fr auto auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.top li:last-child{border-bottom:none}
+.top li.load::before{content:""}
+.top li::before{content:counter(t);font-family:var(--mono);font-size:11px;color:var(--text-faint)}
+.top .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .ty{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:5px}
+.ty.C{background:rgba(63,184,150,.15);color:#7fd6bd}.ty.S{background:rgba(155,154,146,.15);color:#c3c2b7}
+.ty.M{background:rgba(214,154,74,.15);color:#e0b878}.ty.X{background:rgba(155,143,214,.15);color:#b3a8e0}
+.top .sc{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--copper)}
+
+.instruments{display:grid;grid-template-columns:1fr;gap:12px;margin-top:44px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px 24px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;text-decoration:none;transition:background .15s,border-color .15s,transform .15s}
+.card:hover{background:var(--panel-hover);border-color:var(--border-strong);transform:translateX(2px)}
+.card-code{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--copper);margin-bottom:6px;text-transform:uppercase}
+.card-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px;letter-spacing:-.01em}
+.card-desc{font-size:13.5px;color:var(--text-dim);line-height:1.55;max-width:48ch}
+.card-arrow{font-family:var(--mono);font-size:20px;color:var(--text-faint);transition:color .15s,transform .15s}
+.card:hover .card-arrow{color:var(--copper);transform:translateX(3px)}
+
+footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:11.5px;color:var(--text-faint)}
+footer a{color:var(--text-dim);text-decoration:none;border-bottom:1px solid var(--border-strong)}
+footer a:hover{color:var(--copper);border-color:var(--copper)}
+.muted{opacity:.5}
+@media(prefers-reduced-motion:reduce){.card,.spectrum-bar div{transition:none}}
+@media(max-width:600px){.wrap{padding:40px 18px}.card{grid-template-columns:1fr}.card-arrow{display:none}.top li{grid-template-columns:22px 1fr auto auto;gap:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="data-source-banner">Initializing…</div>
+
+<header>
+  <div class="eyebrow"><span class="dot"></span>Live prospecting index · real NASA/JPL data</div>
+  <h1>Near-Earth objects, three ways</h1>
+  <p>Fifty real near-Earth objects — <strong>composition</strong>, <strong>accessibility</strong>, and <strong>mining viability</strong> — tracked against live JPL orbital data. Every figure below is computed from the current feed, not stored.</p>
+</header>
+
+<div class="stats" id="stats">
+  <div class="stat"><div class="v" id="s-count">—</div><div class="l">real NEOs loaded</div></div>
+  <div class="stat prime"><div class="v" id="s-prime">—</div><div class="l">prime targets</div></div>
+  <div class="stat"><div class="v" id="s-metal">—</div><div class="l">metal-bearing (M/X)</div></div>
+  <div class="stat haz"><div class="v" id="s-pha">—</div><div class="l">potentially hazardous</div></div>
+</div>
+
+<div class="spectrum">
+  <div class="spectrum-label">
+    <span>Composition taxonomy</span>
+    <span id="spec-total">— objects</span>
+  </div>
+  <div class="spectrum-bar" id="spec-bar" role="img" aria-label="Composition breakdown of the loaded objects"></div>
+  <div class="spectrum-key" id="spec-key"></div>
+</div>
+
+<div class="top">
+  <h3>Top mining candidates · live ranking</h3>
+  <ol id="top-list"><li class="load muted" style="grid-template-columns:1fr">Loading…</li></ol>
+</div>
+
+<div class="instruments">
+  <a class="card" href="neo100-live-dashboard.html">
+    <div>
+      <div class="card-code">Instrument · Composition &amp; Hazard</div>
+      <div class="card-title">Live dashboard</div>
+      <div class="card-desc">3D orrery, composition and volatile breakdown per object, hazard scale 0–4, and live JPL ephemeris matching.</div>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+  <a class="card" href="neo-mining-scatter.html">
+    <div>
+      <div class="card-code">Instrument · Accessibility Scatter</div>
+      <div class="card-title">Mining candidates &amp; scatter</div>
+      <div class="card-desc">Candidate cards, full sortable table, and a bubble scatter plotting accessibility against composition value.</div>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+  <a class="card" href="neo-mining-radar-breakdown.html">
+    <div>
+      <div class="card-code">Instrument · Radar &amp; Score Breakdown</div>
+      <div class="card-title">Radar profile &amp; breakdown</div>
+      <div class="card-desc">Candidate cards and full table, with a per-object five-axis radar and a stacked mining-score breakdown.</div>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+</div>
+
+<footer>
+  <span>Data: NASA/JPL SBDB &amp; CAD APIs · composition &amp; scores modeled from spectral type</span>
+  <a href="https://github.com/asdfghjkl724-blip/neo-mining-dashboard">Source on GitHub</a>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var COMP = {
+    C:{c:'var(--c-type)', label:'carbonaceous'},
+    S:{c:'var(--s-type)', label:'silicaceous'},
+    M:{c:'var(--m-type)', label:'metallic'},
+    X:{c:'var(--x-type)', label:'X-complex'}
+  };
+  var ORDER = ['S','C','M','X'];
+
+  function banner(txt, cls){
+    var b = document.getElementById('data-source-banner');
+    b.textContent = txt;
+    b.className = cls || '';
+  }
+
+  function render(objs){
+    var n = objs.length;
+    document.getElementById('s-count').textContent = n;
+    document.getElementById('s-prime').textContent = objs.filter(function(o){return o.mining_tier==='Prime target';}).length;
+    document.getElementById('s-metal').textContent = objs.filter(function(o){return o.comp_type==='M'||o.comp_type==='X';}).length;
+    document.getElementById('s-pha').textContent = objs.filter(function(o){return o.pha;}).length;
+
+    var counts = {C:0,S:0,M:0,X:0};
+    objs.forEach(function(o){ if(counts[o.comp_type]!=null) counts[o.comp_type]++; });
+    var bar = document.getElementById('spec-bar'); bar.innerHTML='';
+    var key = document.getElementById('spec-key'); key.innerHTML='';
+    document.getElementById('spec-total').textContent = n + ' objects';
+    ORDER.forEach(function(t){
+      if(!counts[t]) return;
+      var pct = (counts[t]/n*100);
+      var d = document.createElement('div');
+      d.style.width = pct + '%';
+      d.style.background = COMP[t].c;
+      d.title = t + '-type: ' + counts[t];
+      bar.appendChild(d);
+      var s = document.createElement('span');
+      s.innerHTML = '<i style="background:'+COMP[t].c+'"></i>'+t+'-type — '+counts[t]+' '+COMP[t].label;
+      key.appendChild(s);
+    });
+
+    var top = objs.slice().sort(function(a,b){return b.mining_score-a.mining_score;}).slice(0,8);
+    var ol = document.getElementById('top-list'); ol.innerHTML='';
+    top.forEach(function(o){
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="nm">'+o.name+'</span>'
+        + '<span class="ty '+o.comp_type+'">'+o.comp_type+'</span>'
+        + '<span class="sc">'+o.mining_score+'</span>';
+      ol.appendChild(li);
+    });
+  }
+
+  async function boot(){
+    try{
+      if(window.NEOData && window.NEOData.proxyReady && window.NEOData.proxyReady()){
+        banner('Loading live data from NASA/JPL…','');
+        var live = await window.NEOData.loadAll(function(done,total){
+          banner('Loading live JPL data… '+done+'/'+total,'');
+        });
+        if(live && live.length){
+          render(live);
+          banner('Live JPL data · '+live.length+' real NEOs · orbits & approaches from NASA/JPL; composition & scores modeled from spectral type','src-live');
+          return;
+        }
+      }
+      var snap = window.NEO_SNAPSHOT || [];
+      if(snap.length){ render(snap); banner('Showing cached snapshot ('+snap.length+' objects).','src-snapshot'); }
+      else banner('Live JPL data unavailable — check the Worker proxy in neo-config.js. Nothing to display.','src-snapshot');
+    }catch(e){
+      banner('Live fetch failed ('+e.message+'). Check the Worker proxy.','src-snapshot');
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
