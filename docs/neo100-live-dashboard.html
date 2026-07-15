@@ -218,7 +218,7 @@ code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-ra
 </div>
 
 <div style="font-size:10.5px;color:var(--text-muted);margin-top:8px;line-height:1.6">
-  Dataset: 100 NEOs with real composition science (C/S/M/X types, volatiles, metals, mining scores). Speed and mass from dataset physical properties. Approach dates from JPL ephemeris via NASA CAD API where name-matched; simulated for unmatched objects (labeled). Hazard re-scored weekly against NASA MOID + PHA data. Mining viability re-scored monthly from updated accessibility, composition value, and size factors. Replace <code>DEMO_KEY</code> with your key from <a href="https://api.nasa.gov" style="color:var(--text-accent)">api.nasa.gov</a>.
+  Real near-Earth objects from the NASA/JPL Small-Body Database. Orbital elements, MOID, diameter, and close approaches are real JPL data (via the CAD/SBDB APIs through the proxy). Composition class, volatile/metal content, mining scores, and hazard level are modeled from each object's real spectral type and orbit.
 </div>
 
 <script>
@@ -247,7 +247,7 @@ async function __bootData(){
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const API_KEY = 'DEMO_KEY';
+const API_KEY = '';/* unused: data comes via proxy */
 const LD_KM = 149597870.7 / 389.17;
 const AU_KM = 149597870.7;
 const WEEK_MS = 7*24*60*60*1000;
@@ -334,7 +334,8 @@ function fmtCDs(ms) {
 
 async function fetchCADApproaches() {
   const now = new Date(), end = new Date(now.getTime() + 365*86400000);
-  const url = `https://ssd-api.jpl.nasa.gov/cad.api?date-min=${fmtDate(now)}&date-max=${fmtDate(end)}&dist-max=0.5&sort=date&limit=500`;
+  const __base = (window.PROXY_BASE && !/CHANGE-ME/.test(window.PROXY_BASE)) ? window.PROXY_BASE+'/cad' : 'https://ssd-api.jpl.nasa.gov/cad.api';
+  const url = `${__base}?date-min=${fmtDate(now)}&date-max=${fmtDate(end)}&dist-max=0.5&sort=date&limit=500`;
   try {
     const r = await fetch(url); if (!r.ok) return 0;
     const j = await r.json();
