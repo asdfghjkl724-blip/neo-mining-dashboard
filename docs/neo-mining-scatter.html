@@ -255,7 +255,7 @@ function renderScatter(){
 function afterEval(changed){renderCards();renderTable();renderScatter();}
 document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(x){x.classList.remove('act');});b.classList.add('act');sampleCards=parseInt(b.dataset.n,10);renderCards();});});
 document.querySelectorAll('.chart-controls button[data-chart="scatter"]').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.chart-controls button[data-chart="scatter"]').forEach(function(x){x.classList.remove('act');});b.classList.add('act');sampleScatter=parseInt(b.dataset.n,10);renderScatter();});});
-__bootData().then(function(){ runEval(); });
+__bootData().then(function(){ DATA=BASE_DATA.map(function(o){return Object.assign({},o,{approach_dist_ld:o.sim_approach_dist_ld,approach_dist_km:o.sim_approach_dist_ld*LD_KM,approach_date:o.sim_approach_date,api_matched:false});}); runEval(); });
 </script>
 </body>
 </html>

@@ -280,7 +280,7 @@ function renderStackedBar(o){
 
 function afterEval(changed){renderCards();renderTable();if(selId){var sel=DATA.find(function(x){return x.id===selId;});if(sel){renderRadar(sel);renderStackedBar(sel);renderDetail(sel);}}else{renderRadar(DATA[0]);}}
 document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(x){x.classList.remove('act');});b.classList.add('act');sampleCards=parseInt(b.dataset.n,10);renderCards();});});
-__bootData().then(function(){ runEval(); });
+__bootData().then(function(){ DATA=BASE_DATA.map(function(o){return Object.assign({},o,{approach_dist_ld:o.sim_approach_dist_ld,approach_dist_km:o.sim_approach_dist_ld*LD_KM,approach_date:o.sim_approach_date,api_matched:false,ephem_score:ccToScore(o.condition_code)});}); runEval(); });
 </script>
 </body>
 </html>

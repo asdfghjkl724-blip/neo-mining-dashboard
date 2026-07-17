@@ -701,6 +701,14 @@ setInterval(()=>{
 
 (async()=>{
   await __bootData();
+  DATA = BASE_DATA.map(o => ({...o,
+    approach_dist_ld: o.sim_approach_dist_ld,
+    approach_dist_km: o.sim_approach_dist_ld * LD_KM,
+    approach_date: o.sim_approach_date,
+    api_matched: !!o.sim_approach_date,
+    pha_api: o.pha
+  }));
+  updateMetrics(); buildOrrery(); renderTable();
   await runHazardEval();
   await runMiningEval();
 })();
