@@ -155,6 +155,23 @@
     rec.speed_kms = rec.v_rel_kms ?? null;
     rec.modeled_scores = true;
 
+    // ── Legacy aliases: the three dashboards' render/orrery/table/eval code
+    // was written against the original synthetic field names. Provide those
+    // names too so the live objects render without touching dashboard code. ──
+    rec.id = rec.des;
+    rec.diam_m = rec.diameter_m;
+    rec.diam_km = rec.diameter_km;
+    rec.orb_class = rec.orbit_class;
+    rec.sim_approach_date = rec.approach_date;
+    rec.sim_approach_dist_ld = rec.approach_dist_ld;
+    rec.approach_dist_km = (rec.approach_dist_ld != null)
+      ? Math.round(rec.approach_dist_ld * 384400) : null;   // LD -> km
+    rec.api_matched = !!rec.approach_date;   // matched an approach = has ephemeris
+    rec.pha_api = rec.pha;
+    // orbital elements the orrery reads
+    rec.a = rec.a_au; rec.ecc = rec.e; rec.inc = rec.i_deg;
+    rec.q = rec.q_au; rec.ad = rec.ad_au;
+
     delete rec._comp;
     return rec;
   }

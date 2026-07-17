@@ -125,7 +125,7 @@ code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-ra
 </div>
 <div class="src">
   <span class="pulse"></span>
-  <span>100-object dataset · hazard re-evaluated weekly via NASA CAD API · mining scores re-evaluated monthly · approach dates from JPL ephemeris where name-matched</span>
+  <span>Real NEOs from NASA/JPL · hazard re-evaluated weekly · mining re-evaluated monthly · orbits, MOID &amp; approaches from JPL; composition &amp; scores modeled from spectral type</span>
 </div>
 
 <div class="eval-grid">
@@ -152,7 +152,7 @@ code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-ra
 </div>
 
 <div id="metrics">
-  <div class="mc"><div class="l">Total objects</div><div class="v">100</div></div>
+  <div class="mc"><div class="l">Total objects</div><div class="v" id="mm-total">—</div></div>
   <div class="mc"><div class="l">API ephemeris matches</div><div class="v" id="mm-api" style="color:#185fa5">—</div></div>
   <div class="mc"><div class="l">Hazard lvl 3–4</div><div class="v" id="mm-haz" style="color:#A32D2D">—</div></div>
   <div class="mc"><div class="l">Prime mining targets</div><div class="v" id="mm-prime" style="color:#3B6D11">—</div></div>
@@ -181,7 +181,7 @@ code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-ra
   <div>
     <div id="orrery-wrap"><canvas id="orrery"></canvas><div id="otip"></div></div>
     <div class="ohint">Drag to rotate · Scroll to zoom · Click dot to inspect · Color = mining tier (hazard overrides for lvl 3–4)</div>
-    <div id="status">Loading 100-object dataset and connecting to NASA CAD API…</div>
+    <div id="status">Loading real NEOs from NASA/JPL…</div>
   </div>
   <div id="side">
     <div id="detail">
@@ -455,6 +455,8 @@ async function runMiningEval() {
 }
 
 function updateMetrics() {
+  var mt=document.getElementById('mm-total'); if(mt) mt.textContent = DATA.length;
+  var ma=document.getElementById('mm-api'); if(ma) ma.textContent = DATA.filter(function(o){return o.api_matched;}).length;
   document.getElementById('mm-haz').textContent   = DATA.filter(o => o.hazard >= 3).length;
   document.getElementById('mm-prime').textContent = DATA.filter(o => o.mining_tier === 'Prime target').length;
   const fa = [...DATA].sort((a,b) => b.speed_kms - a.speed_kms)[0];
