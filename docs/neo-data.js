@@ -147,13 +147,38 @@
     if (rec.diameter_m) {
       const r = rec.diameter_m / 2;
       rec.mass_kg = Math.round((4 / 3) * Math.PI * r * r * r * density * 1000);
-    } else rec.mass_kg = null;
+    } else {
+      // No published diameter: estimate from absolute magnitude H + albedo
+      // D(km) = 1329 / sqrt(albedo) * 10^(-H/5)
+      const H = rec.H_mag, alb = rec.albedo || 0.14;
+      if (H != null) {
+        const dkm = 1329 / Math.sqrt(alb) * Math.pow(10, -H / 5);
+        rec.diameter_km = Math.round(dkm * 1000) / 1000;
+        rec.diameter_m = Math.round(dkm * 1000);
+        const r = rec.diameter_m / 2;
+        rec.mass_kg = Math.round((4 / 3) * Math.PI * r * r * r * density * 1000);
+        rec.diameter_estimated = true;
+      } else {
+        rec.mass_kg = 0;
+      }
+    }
 
     // Modeled mining + hazard from REAL inputs
     Object.assign(rec, miningModel(rec));
     rec.hazard = hazardModel(rec);
-    rec.speed_kms = rec.v_rel_kms ?? null;
     rec.modeled_scores = true;
+
+    // ── Fields the dashboards call .toFixed() / arithmetic on must never be
+    // null. Objects with no close approach in the search window get safe
+    // defaults, and speed falls back to heliocentric orbital velocity. ──
+    if (rec.v_rel_kms == null) {
+      // mean orbital speed (vis-viva at a): v = sqrt(GM_sun/a), a in AU -> km/s
+      rec.v_rel_kms = rec.a_au ? Math.round(29.78 / Math.sqrt(rec.a_au) * 100) / 100 : 0;
+    }
+    rec.speed_kms = rec.v_rel_kms;
+    if (rec.approach_dist_ld == null) rec.approach_dist_ld = (rec.moid_au != null ? Math.round(rec.moid_au * LD_PER_AU * 100) / 100 : 0);
+    if (!rec.approach_date) rec.approach_date = "—";
+    if (rec.mass_kg == null) rec.mass_kg = 0;
 
     // ── Legacy aliases: the three dashboards' render/orrery/table/eval code
     // was written against the original synthetic field names. Provide those
@@ -165,8 +190,8 @@
     rec.sim_approach_date = rec.approach_date;
     rec.sim_approach_dist_ld = rec.approach_dist_ld;
     rec.approach_dist_km = (rec.approach_dist_ld != null)
-      ? Math.round(rec.approach_dist_ld * 384400) : null;   // LD -> km
-    rec.api_matched = !!rec.approach_date;   // matched an approach = has ephemeris
+      ? Math.round(rec.approach_dist_ld * 384400) : 0;   // LD -> km
+    rec.api_matched = (rec.approach_date && rec.approach_date !== "—");
     rec.pha_api = rec.pha;
     // orbital elements the orrery reads
     rec.a = rec.a_au; rec.ecc = rec.e; rec.inc = rec.i_deg;

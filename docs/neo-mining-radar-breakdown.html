@@ -150,7 +150,7 @@ code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-ra
   <a id="d-jpl" href="#" class="jpl-a" target="_blank" style="margin-top:8px;display:inline-block">JPL Small-Body Database <i class="ti ti-external-link" aria-hidden="true" style="font-size:11px;vertical-align:-1px"></i></a>
 </div>
 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-  <span style="font-size:12.5px;font-weight:500">All 100 objects</span>
+  <span style="font-size:12.5px;font-weight:500">All <span id="tbl-count">50</span> objects</span>
   <span style="font-size:11px;color:var(--text-muted)">Click to select · sort any column</span>
   <input id="srch" type="text" placeholder="Search name…" style="font-size:11px;padding:2px 8px;border-radius:6px;border:.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);width:130px;margin-left:auto;outline:none">
 </div>
@@ -280,7 +280,7 @@ function renderStackedBar(o){
 
 function afterEval(changed){renderCards();renderTable();if(selId){var sel=DATA.find(function(x){return x.id===selId;});if(sel){renderRadar(sel);renderStackedBar(sel);renderDetail(sel);}}else{renderRadar(DATA[0]);}}
 document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(x){x.classList.remove('act');});b.classList.add('act');sampleCards=parseInt(b.dataset.n,10);renderCards();});});
-__bootData().then(function(){ DATA=BASE_DATA.map(function(o){return Object.assign({},o,{approach_dist_ld:o.sim_approach_dist_ld,approach_dist_km:o.sim_approach_dist_ld*LD_KM,approach_date:o.sim_approach_date,api_matched:false,ephem_score:ccToScore(o.condition_code)});}); runEval(); });
+__bootData().then(function(){ DATA=BASE_DATA.map(function(o){return Object.assign({},o,{approach_dist_ld:o.sim_approach_dist_ld,approach_dist_km:o.sim_approach_dist_ld*LD_KM,approach_date:o.sim_approach_date,api_matched:false,ephem_score:ccToScore(o.condition_code)});}); var tc=document.getElementById('tbl-count'); if(tc) tc.textContent=DATA.length; runEval(); });
 </script>
 </body>
 </html>

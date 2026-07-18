@@ -151,7 +151,7 @@ code{font-family:monospace;background:var(--surface-1);padding:1px 4px;border-ra
 </div>
 
 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
-  <span style="font-size:12.5px;font-weight:500">All 100 objects</span>
+  <span style="font-size:12.5px;font-weight:500">All <span id="tbl-count">50</span> objects</span>
   <span style="font-size:11px;color:var(--text-muted)">Click to select &middot; sort any column</span>
   <input id="srch" type="text" placeholder="Search name&hellip;" style="font-size:11px;padding:2px 8px;border-radius:6px;border:.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);width:130px;margin-left:auto;outline:none">
 </div>
@@ -255,7 +255,7 @@ function renderScatter(){
 function afterEval(changed){renderCards();renderTable();renderScatter();}
 document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.chart-controls button[data-chart="cards"]').forEach(function(x){x.classList.remove('act');});b.classList.add('act');sampleCards=parseInt(b.dataset.n,10);renderCards();});});
 document.querySelectorAll('.chart-controls button[data-chart="scatter"]').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.chart-controls button[data-chart="scatter"]').forEach(function(x){x.classList.remove('act');});b.classList.add('act');sampleScatter=parseInt(b.dataset.n,10);renderScatter();});});
-__bootData().then(function(){ DATA=BASE_DATA.map(function(o){return Object.assign({},o,{approach_dist_ld:o.sim_approach_dist_ld,approach_dist_km:o.sim_approach_dist_ld*LD_KM,approach_date:o.sim_approach_date,api_matched:false});}); runEval(); });
+__bootData().then(function(){ DATA=BASE_DATA.map(function(o){return Object.assign({},o,{approach_dist_ld:o.sim_approach_dist_ld,approach_dist_km:o.sim_approach_dist_ld*LD_KM,approach_date:o.sim_approach_date,api_matched:false});}); var tc=document.getElementById('tbl-count'); if(tc) tc.textContent=DATA.length; runEval(); });
 </script>
 </body>
 </html>
